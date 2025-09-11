@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.estudapp.ui.feature.auth.SignInScreen
 import com.example.estudapp.ui.feature.auth.SignUpScreen
+import com.example.estudapp.ui.feature.home.HomeScreen
 
 @Composable
 fun EPPNavHost(
@@ -21,6 +22,10 @@ fun EPPNavHost(
 
         composable("signup"){
             SignUpScreen(navController, authViewModel)
+        }
+
+        composable("home"){
+            HomeScreen(navController, authViewModel)
         }
     }
 }
