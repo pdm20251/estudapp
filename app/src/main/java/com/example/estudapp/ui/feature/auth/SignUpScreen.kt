@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,13 +37,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.estudapp.R
 import com.example.estudapp.ui.theme.ErrorRed
 import com.example.estudapp.ui.theme.PrimaryBlue
 
 @Composable
 fun SignUpScreen(
-
+    navController: NavHostController,
+    authViewModel: AuthViewModel
 ) {
     var name by remember {
         mutableStateOf("")
@@ -96,8 +99,8 @@ fun SignUpScreen(
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .height(55.dp),
-                value = email,
-                onValueChange = { email = it },
+                value = name,
+                onValueChange = { name = it },
                 placeholder = { Text("Kotlinson da Silva") },
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = PrimaryBlue,
@@ -106,7 +109,6 @@ fun SignUpScreen(
                     errorIndicatorColor = ErrorRed
                 ),
                 shape = RoundedCornerShape(30f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
 
             Spacer(Modifier.height(30.dp))
@@ -168,14 +170,15 @@ fun SignUpScreen(
             Spacer(Modifier.height(70.dp))
 
             Button(
-                onClick = { /*TODO*/ },
+                onClick = { authViewModel.signup(name, email, password)},
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .height(55.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = PrimaryBlue
                 ),
-                shape = RoundedCornerShape(30f)
+                shape = RoundedCornerShape(30f),
+                enabled = (email.length >= 1 && password.length >= 8 && name.length >= 3)
             ) {
                 Text(text = "Registrar-se", fontSize = 18.sp)
             }
@@ -195,5 +198,5 @@ fun SignUpScreen(
 @Preview
 @Composable
 fun SignUpScreenPreview() {
-    SignUpScreen()
+    SignUpScreen(navController = NavHostController(LocalContext.current), authViewModel = AuthViewModel())
 }

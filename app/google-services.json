@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "293741035243",
+    "project_id": "estudapp-71947",
+    "storage_bucket": "estudapp-71947.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:293741035243:android:c1a17baa69ba86fccc08ae",
+        "android_client_info": {
+          "package_name": "com.example.estudapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbn42Sz_T056WGlnLTUxSm1cucxvMqA8s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

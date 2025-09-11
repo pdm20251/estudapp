@@ -1,5 +1,6 @@
 package com.example.estudapp.ui.feature.auth
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,15 +16,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,7 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -41,12 +41,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.estudapp.R
 import com.example.estudapp.ui.theme.ErrorRed
-import com.example.estudapp.ui.theme.LightGray
 import com.example.estudapp.ui.theme.PrimaryBlue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.navigation.NavHostController
 
 @Composable
 fun SignInScreen(
-
+    navController: NavHostController,
+    authViewModel: AuthViewModel
 ) {
     var email by remember {
         mutableStateOf("")
@@ -54,6 +56,25 @@ fun SignInScreen(
 
     var password by remember {
         mutableStateOf("")
+    }
+
+    val authState = authViewModel.authState.observeAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(authState.value) {
+        when (authState.value) {
+            is AuthState.Autheticated -> {
+                navController.navigate("home")
+            }
+
+            is AuthState.Error -> Toast.makeText(
+                context,
+                (authState.value as AuthState.Error).message,
+                Toast.LENGTH_SHORT
+            ).show()
+
+            else -> Unit
+        }
     }
 
     Scaffold (
@@ -140,14 +161,15 @@ fun SignInScreen(
             Spacer(Modifier.height(70.dp))
 
             Button(
-                onClick = { /*TODO*/ },
+                onClick = { authViewModel.login(email, password) },
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .height(55.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = PrimaryBlue
                 ),
-                shape = RoundedCornerShape(30f)
+                shape = RoundedCornerShape(30f),
+                enabled = (email.length >= 1 && password.length >= 8)
             ) {
                 Text(text = "Entrar", fontSize = 18.sp)
             }
@@ -155,7 +177,7 @@ fun SignInScreen(
             Spacer(Modifier.height(30.dp))
 
             TextButton(
-                onClick = {},
+                onClick = { navController.navigate("signup") },
 
             ) {
                 Text("Não tem uma conta?", color = PrimaryBlue, fontSize = 15.sp)
@@ -167,5 +189,5 @@ fun SignInScreen(
 @Preview
 @Composable
 fun SignInScreenPreview() {
-    SignInScreen()
+    SignInScreen(navController = NavHostController(LocalContext.current), authViewModel = AuthViewModel())
 }
