@@ -42,6 +42,7 @@ android {
 
 dependencies {
 
+    // Dependências Core e de UI
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -50,7 +51,18 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+
+    // Navegação e LiveData
+    implementation(libs.androidx.navigation.compose)
+    implementation("androidx.compose.runtime:runtime-livedata") // Corrigido
+
+    // Firebase
+    // A BoM (Bill of Materials) gerencia as versões de todas as bibliotecas Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.1.1"))
     implementation(libs.firebase.auth)
+    implementation("com.google.firebase:firebase-database-ktx") // Adicionado corretamente
+
+    // Dependências de Teste
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -58,7 +70,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
-    implementation("androidx.compose.runtime:runtime-livedata:composeBom")
-    implementation(libs.androidx.navigation.compose)
 }
