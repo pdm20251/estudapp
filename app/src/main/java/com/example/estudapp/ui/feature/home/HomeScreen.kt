@@ -29,7 +29,7 @@ fun HomeScreen(
 ) {
     Scaffold { paddingValues ->
         Column(
-            modifier = Modifier.consumeWindowInsets(paddingValues),
+            modifier = Modifier,
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
