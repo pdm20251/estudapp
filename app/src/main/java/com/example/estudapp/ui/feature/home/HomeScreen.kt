@@ -109,7 +109,7 @@ fun HomeScreen(
                     .fillMaxWidth(0.92f)
                     .height(100.dp)
                     .clickable(
-                        onClick = { navController.navigate("flashcard_list") }
+                        onClick = { navController.navigate("deck_list") }
                     ),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
