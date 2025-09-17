@@ -102,8 +102,26 @@ class FlashcardRepository {
 
     suspend fun deleteDeck(deckId: String): Result<Unit> {
         return try {
-            val deckRef = flashcardsRef.child(deckId)
-            deckRef.removeValue().await()
+            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
+
+            // 1) Leia os flashcards do deck (para montar o multi-update)
+            val cardsSnap = flashcardsRef.child(deckId).get().await()
+
+            // 2) Monte um fan-out update: remove o deck do usuário e cada card do deck
+            val updates = hashMapOf<String, Any?>()
+            updates["decks/$userId/$deckId"] = null
+            for (card in cardsSnap.children) {
+                val cardId = card.key ?: continue
+                updates["flashcards/$deckId/$cardId"] = null
+            }
+
+            // (Opcional) tentar limpar o nó vazio do deck em flashcards/
+            // Se sua regra permitir, ótimo; se não permitir, ignoramos a falha.
+            // updates["flashcards/$deckId"] = null
+
+            // 3) Execute a remoção atômica
+            FirebaseDatabase.getInstance().reference.updateChildren(updates).await()
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
