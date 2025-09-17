@@ -11,7 +11,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -108,12 +110,13 @@ fun DeckListScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(30f))
                                 .background(LightGray)
-                                .padding(10.dp),
+                                .padding(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ){
-                            Icon(Icons.Outlined.Warning, contentDescription = "warning", tint = PrimaryBlue)
-                            Text("você ainda não\ntem nenhum deck :\\", color = PrimaryBlue, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
+                            Icon(Icons.Outlined.Info, contentDescription = "info", tint = PrimaryBlue)
+                            Spacer(Modifier.height(4.dp))
+                            Text("Você ainda não\ntem nenhum deck :\\", color = PrimaryBlue, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
                         }
                     } else {
                         Spacer(Modifier.fillMaxHeight(0.1f))
@@ -153,7 +156,7 @@ fun DeckItem(
             .fillMaxWidth()
             .height(40.dp)
             .clickable(
-                onClick = { navController.navigate("flashcard_list/${deck.id}") }
+                onClick = { navController.navigate("flashcard_list/${deck.id}/${deck.name}/${deck.description}") }
             ),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
@@ -169,15 +172,6 @@ fun DeckItem(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(text = it, style = MaterialTheme.typography.bodySmall, color = Black)
             }
-        }
-
-        Button(
-            onClick = { navController.navigate("study_session/${deck.id}") },
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            shape = RoundedCornerShape(30f),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-        ) {
-            Text("Começar", color = White, fontSize = 13.sp)
         }
     }
 }
