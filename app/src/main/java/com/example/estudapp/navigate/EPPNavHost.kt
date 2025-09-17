@@ -14,6 +14,7 @@ import com.example.estudapp.ui.feature.flashcard.CreateFlashcardScreen
 import com.example.estudapp.ui.feature.flashcard.DeckListScreen
 import com.example.estudapp.ui.feature.flashcard.FlashcardListScreen
 import com.example.estudapp.ui.feature.home.HomeScreen
+import com.example.estudapp.ui.feature.location.MapScreen
 
 @Composable
 fun EPPNavHost(
@@ -31,6 +32,10 @@ fun EPPNavHost(
 
         composable("home") {
             HomeScreen(navController, authViewModel)
+        }
+
+        composable("map") {
+            MapScreen() // Não precisa passar o ViewModel, ele será injetado
         }
 
         // --- NOVAS ROTAS PARA DECKS ---

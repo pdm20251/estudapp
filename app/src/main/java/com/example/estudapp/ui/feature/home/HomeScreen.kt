@@ -72,6 +72,10 @@ fun HomeScreen(
                 Text("Sair")
             }
 
+            Button(onClick = { navController.navigate("map") }) {
+                Text("Meus Locais de Estudo")
+            }
+
             Button(onClick = { navController.navigate("deck_list") }) {
                 Text("Meus Decks")
             }
