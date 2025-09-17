@@ -1,6 +1,8 @@
 package com.example.estudapp.domain.repository
 
 import android.net.Uri
+import com.example.estudapp.data.model.ChatMessageDTO
+import com.example.estudapp.data.model.ChatSessionDTO
 import com.example.estudapp.data.model.DeckDTO
 import com.example.estudapp.data.model.FlashcardDTO
 import com.google.firebase.auth.FirebaseAuth
@@ -31,6 +33,8 @@ class FlashcardRepository {
 
     private val statsRef = database.getReference("stats")
     private fun getCurrentUserId(): String? = auth.currentUser?.uid
+
+    private val chatsRef = database.getReference("chats")
 
     suspend fun getFlashcard(deckId: String, flashcardId: String): Result<FlashcardDTO?> {
         return try {
@@ -196,5 +200,82 @@ class FlashcardRepository {
         }
         ref.addValueEventListener(listener)
         awaitClose { ref.removeEventListener(listener)}
+    }
+    suspend fun createChatSession(deckId: String? = null): Result<String> {
+        return try {
+            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
+            val sessionRef = chatsRef.child(userId).push()
+            val sessionId = sessionRef.key!!
+            val now = System.currentTimeMillis()
+            val meta = ChatSessionDTO(
+                sessionId = sessionId,
+                userId = userId,
+                deckId = deckId,
+                createdAt = now,
+                updatedAt = now,
+                status = "open"
+            )
+            sessionRef.child("meta").setValue(meta).await()
+            Result.success(sessionId)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /** Enfileira uma mensagem do usuário: role=user, status=queued */
+    suspend fun enqueueChatUserMessage(sessionId: String, content: String): Result<String> {
+        return try {
+            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
+            val msgRef = chatsRef.child(userId).child(sessionId).child("messages").push()
+            val msg = ChatMessageDTO(
+                id = msgRef.key!!,
+                role = "user",
+                content = content,
+                status = "queued",
+                createdAt = System.currentTimeMillis()
+            )
+            msgRef.setValue(msg).await()
+            // atualiza updatedAt
+            chatsRef.child(userId).child(sessionId).child("meta").child("updatedAt")
+                .setValue(System.currentTimeMillis()).await()
+            Result.success(msg.id!!)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /** Observa as mensagens (app verá a resposta da IA quando o worker gravar role=assistant) */
+    fun observeChatMessages(sessionId: String): Flow<Result<List<ChatMessageDTO>>> = callbackFlow {
+        val userId = getCurrentUserId()
+        if (userId == null) {
+            trySend(Result.failure(Exception("Usuário não autenticado.")))
+            awaitClose(); return@callbackFlow
+        }
+        val ref = chatsRef.child(userId).child(sessionId).child("messages")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = snapshot.children.mapNotNull { it.getValue(ChatMessageDTO::class.java) }
+                    .sortedBy { it.createdAt ?: 0L }
+                trySend(Result.success(list))
+            }
+            override fun onCancelled(error: DatabaseError) {
+                trySend(Result.failure(error.toException()))
+            }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+    /** Fecha a sessão (opcional) */
+    suspend fun closeChatSession(sessionId: String): Result<Unit> {
+        return try {
+            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
+            val metaRef = chatsRef.child(userId).child(sessionId).child("meta")
+            metaRef.child("status").setValue("closed").await()
+            metaRef.child("updatedAt").setValue(System.currentTimeMillis()).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

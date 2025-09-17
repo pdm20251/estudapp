@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.util.Log
 
 class FlashcardViewModel : ViewModel() {
 
@@ -41,6 +42,17 @@ class FlashcardViewModel : ViewModel() {
             _flashcardsState.value = FlashcardsUiState.Loading
             repository.getFlashcards(deckId).collect { result ->
                 result.onSuccess { flashcards ->
+
+                    //APAGAR LINHA 49 DEPOIS DOS TESTES
+
+
+                    chatAskHardcoded(deckId=null)
+
+
+                    //FIM
+
+
+
                     _flashcardsState.value = FlashcardsUiState.Success(flashcards)
                 }.onFailure { error ->
                     _flashcardsState.value = FlashcardsUiState.Error(error.message ?: "Erro ao carregar flashcards.")
@@ -185,6 +197,25 @@ class FlashcardViewModel : ViewModel() {
         }
         currentSession = null
         currentSessionDeckId=null
+    }
+
+    fun chatAskHardcoded(deckId: String? = null) {
+        viewModelScope.launch {
+            // cria sessão
+            val sessionRes = repository.createChatSession(deckId)
+            val sessionId = sessionRes.getOrElse {
+                Log.e("ChatVM", "Falha ao criar sessão: ${it.message}", it)
+                return@launch
+            }
+            // envia pergunta
+            val ask = "Explique Past Perfect com 2 exemplos."
+            val msgRes = repository.enqueueChatUserMessage(sessionId, ask)
+            msgRes.onFailure {
+                Log.e("ChatVM", "Falha ao enviar pergunta: ${it.message}", it)
+            }
+            // (opcional) começar a observar mensagens (para quando for ligar na UI):
+            // repository.observeChatMessages(sessionId).collect { /* atualizar estado */ }
+        }
     }
 }
 
