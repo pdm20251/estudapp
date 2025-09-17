@@ -17,6 +17,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.util.Log
+import java.net.HttpURLConnection
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.URL
 
 class FlashcardViewModel : ViewModel() {
 
@@ -43,11 +49,13 @@ class FlashcardViewModel : ViewModel() {
             repository.getFlashcards(deckId).collect { result ->
                 result.onSuccess { flashcards ->
 
-                    //APAGAR LINHA 49 DEPOIS DOS TESTES
+                    //APAGAR LINHAS DEPOIS DOS TESTES
 
+                    //LINHA PARA CHAMAR API NO LOGCAT
+                    //fetchMyDecksFromApi()
 
-                    chatAskHardcoded(deckId=null)
-
+                    //LINHA PARA TESTAR O CHAT
+                    //chatAskHardcoded(deckId=null)
 
                     //FIM
 
@@ -215,6 +223,52 @@ class FlashcardViewModel : ViewModel() {
             }
             // (opcional) começar a observar mensagens (para quando for ligar na UI):
             // repository.observeChatMessages(sessionId).collect { /* atualizar estado */ }
+        }
+    }
+
+    private fun fetchMyDecksFromApi() {
+        viewModelScope.launch(Dispatchers.IO) {
+            // Pega o usuário logado atualmente no Firebase
+            val user = FirebaseAuth.getInstance().currentUser
+            if (user == null) {
+                Log.e("MyDecksApi", "Usuário não está logado.")
+                return@launch
+            }
+
+            // Solicita o token de autenticação do usuário
+            user.getIdToken(true).addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val token = task.result?.token
+                    if (token == null) {
+                        Log.e("MyDecksApi", "Não foi possível obter o token.")
+                        return@addOnCompleteListener
+                    }
+
+                    // Tendo o token, continua a chamada de rede em uma thread de background
+                    viewModelScope.launch(Dispatchers.IO) {
+                        val url = URL("https://estudapp-api-293741035243.southamerica-east1.run.app/my-decks")
+                        val connection = url.openConnection() as HttpURLConnection
+                        connection.requestMethod = "GET"
+                        connection.setRequestProperty("Authorization", "Bearer $token")
+
+
+                        try {
+                            val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                            val response = StringBuilder()
+                            reader.forEachLine { response.append(it) }
+                            Log.d("MyDecksApi", "Sucesso: $response")
+                        } catch (e: Exception) {
+                            Log.e("MyDecksApi", "Erro na requisição: ${e.message}")
+                            val errorResponse = connection.errorStream?.bufferedReader()?.readText()
+                            Log.e("MyDecksApi", "Resposta do erro: $errorResponse")
+                        } finally {
+                            connection.disconnect()
+                        }
+                    }
+                } else {
+                    Log.e("MyDecksApi", "Falha ao obter token: ${task.exception?.message}")
+                }
+            }
         }
     }
 }
