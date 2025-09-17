@@ -7,6 +7,9 @@ import com.example.estudapp.data.model.AlternativaDTO
 import com.example.estudapp.data.model.FlashcardDTO
 import com.example.estudapp.data.model.FlashcardTypeEnum
 import com.example.estudapp.domain.repository.FlashcardRepository
+import com.example.estudapp.domain.stats.DeckSessionManager
+import com.example.estudapp.tools.HardcodedStats
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +30,10 @@ class FlashcardViewModel : ViewModel() {
 
     private val _cardToEdit = MutableStateFlow<FlashcardDTO?>(null)
     val cardToEdit: StateFlow<FlashcardDTO?> = _cardToEdit.asStateFlow()
+
+    private var currentSession: DeckSessionManager? = null
+
+    private var currentSessionDeckId:String?=null
 
     // --- Funções de Carregamento ---
     fun loadFlashcards(deckId: String) {
@@ -156,6 +163,28 @@ class FlashcardViewModel : ViewModel() {
         viewModelScope.launch {
             repository.deleteFlashcard(deckId, flashcardId)
         }
+    }
+
+    fun startDeckSession(deckId: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        currentSessionDeckId = deckId
+        currentSession = DeckSessionManager(deckId,uid)
+    }
+
+    fun addResultFrenteVerso(cardId: String) { currentSession?.addFrenteVerso(cardId) }
+    fun addResultMultiplaEscolha(cardId: String, isCorrect: Boolean) { currentSession?.addMultiplaEscolha(cardId, isCorrect) }
+    fun addResultCloze(cardId: String, blanksCorrect: Int? = null, blanksTotal: Int? = null, aiScore: Double? = null) {
+        currentSession?.addCloze(cardId, blanksCorrect, blanksTotal, aiScore)
+    }
+    fun addResultDigite(cardId: String, aiScore: Double) { currentSession?.addDigiteResposta(cardId, aiScore) }
+
+    fun finishAndSaveDeckSession() {
+        val session = currentSession?.build() ?: return
+        viewModelScope.launch {
+            repository.saveDeckSessionStat(session)
+        }
+        currentSession = null
+        currentSessionDeckId=null
     }
 }
 

@@ -14,6 +14,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
+import com.example.estudapp.data.model.DeckPlayStatDTO
+import com.example.estudapp.data.model.ReviewResultDTO
+import com.google.firebase.database.ServerValue
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.channels.awaitClose
 
 class FlashcardRepository {
 
@@ -23,6 +29,7 @@ class FlashcardRepository {
     private val decksRef = database.getReference("decks")
     private val flashcardsRef = database.getReference("flashcards")
 
+    private val statsRef = database.getReference("stats")
     private fun getCurrentUserId(): String? = auth.currentUser?.uid
 
     suspend fun getFlashcard(deckId: String, flashcardId: String): Result<FlashcardDTO?> {
@@ -149,5 +156,45 @@ class FlashcardRepository {
         }
         flashcardsRef.child(deckId).addValueEventListener(listener)
         awaitClose { flashcardsRef.child(deckId).removeEventListener(listener) }
+    }
+
+    suspend fun saveDeckSessionStat(session: DeckPlayStatDTO): Result<String> {
+        return try {
+            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
+            val deckId = session.deckId ?: return Result.failure(IllegalArgumentException("deckId ausente."))
+            // gera um push id p/ sessão
+            val newSessionRef = statsRef.child(userId).child(deckId).push()
+            val sessionId = newSessionRef.key!!
+
+            // garante campos obrigatórios
+            session.id = sessionId
+            session.userId = userId
+
+            // persiste a sessão completa
+            newSessionRef.setValue(session).await()
+            Result.success(sessionId)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun getDeckSessions(deckId: String): kotlinx.coroutines.flow.Flow<Result<List<DeckPlayStatDTO>>> = callbackFlow {
+        val userId = getCurrentUserId()
+        if (userId == null) {
+            trySend(Result.failure(Exception("Usuário não autenticado.")))
+            awaitClose(); return@callbackFlow
+        }
+        val ref = statsRef.child(userId).child(deckId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val items = snapshot.children.mapNotNull { it.getValue(DeckPlayStatDTO::class.java) }
+                trySend(Result.success(items))
+            }
+            override fun onCancelled(error: DatabaseError) {
+                trySend(Result.failure(error.toException()))
+            }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener)}
     }
 }
