@@ -4,6 +4,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 class AuthViewModel : ViewModel() {
     private val auth : FirebaseAuth = FirebaseAuth.getInstance()
@@ -23,6 +26,18 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+
+    suspend fun getUserJwt(forceRefresh: Boolean = false): String? {
+        val currentUser = auth.currentUser
+        return try {
+            withContext(Dispatchers.IO) {
+                currentUser?.getIdToken(forceRefresh)?.await()?.token
+            }
+        } catch (e: Exception) {
+            println("Erro ao obter o ID Token: ${e.message}")
+            null
+        }
+    }
     fun login(email: String, password: String){
 
         if(email.isEmpty() || password.isEmpty()){

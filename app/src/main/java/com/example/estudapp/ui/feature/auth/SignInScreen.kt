@@ -80,7 +80,7 @@ fun SignInScreen(
     Scaffold (
         modifier = Modifier,
 
-    ) { paddingValues ->
+        ) { paddingValues ->
 
         Column (
             modifier = Modifier
@@ -179,7 +179,7 @@ fun SignInScreen(
             TextButton(
                 onClick = { navController.navigate("signup") },
 
-            ) {
+                ) {
                 Text("Não tem uma conta?", color = PrimaryBlue, fontSize = 15.sp)
             }
         }

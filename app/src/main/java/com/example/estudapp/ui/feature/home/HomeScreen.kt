@@ -90,7 +90,6 @@ fun HomeScreen(
             ) {
                 Text(text = "Bem vinda(o),\n[nome]", fontWeight = FontWeight.Black, fontSize = 22.sp, color = White)
 
-
                 Image(painter = painterResource(id = R.drawable.logo_white), contentDescription = null, Modifier
                         .size(30.dp)
                         .align(Alignment.Bottom)

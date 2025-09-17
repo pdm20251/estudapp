@@ -13,6 +13,7 @@ import com.example.estudapp.ui.feature.flashcard.CreateDeckScreen
 import com.example.estudapp.ui.feature.flashcard.CreateFlashcardScreen
 import com.example.estudapp.ui.feature.flashcard.DeckListScreen
 import com.example.estudapp.ui.feature.flashcard.FlashcardListScreen
+import com.example.estudapp.ui.feature.flashcard.StudyScreen
 import com.example.estudapp.ui.feature.home.HomeScreen
 
 @Composable
@@ -24,45 +25,58 @@ fun EPPNavHost(
         composable("login") {
             SignInScreen(navController, authViewModel)
         }
-
         composable("signup") {
             SignUpScreen(navController, authViewModel)
         }
-
         composable("home") {
             HomeScreen(navController, authViewModel)
         }
-
-        // --- NOVAS ROTAS PARA DECKS ---
-
         composable("deck_list") {
             DeckListScreen(navController)
         }
-
         composable("create_deck") {
             CreateDeckScreen(navController)
         }
-
-        // --- ROTAS ANTIGAS MODIFICADAS PARA ACEITAR O deckId ---
 
         composable(
             route = "flashcard_list/{deckId}",
             arguments = listOf(navArgument("deckId") { type = NavType.StringType })
         ) { backStackEntry ->
             val deckId = backStackEntry.arguments?.getString("deckId")
-            // Garante que o deckId não seja nulo antes de chamar a tela
             if (deckId != null) {
                 FlashcardListScreen(navController = navController, deckId = deckId)
             }
         }
 
+        // --- ESTA É A ROTA CORRIGIDA ---
         composable(
-            route = "create_flashcard/{deckId}",
+            route = "create_flashcard/{deckId}?flashcardId={flashcardId}",
+            arguments = listOf(
+                navArgument("deckId") { type = NavType.StringType },
+                navArgument("flashcardId") {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) { backStackEntry ->
+            val deckId = backStackEntry.arguments?.getString("deckId")
+            val flashcardId = backStackEntry.arguments?.getString("flashcardId")
+            if (deckId != null) {
+                CreateFlashcardScreen(
+                    navController = navController,
+                    deckId = deckId,
+                    flashcardId = flashcardId // Agora esta chamada está correta
+                )
+            }
+        }
+
+        composable(
+            route = "study_session/{deckId}",
             arguments = listOf(navArgument("deckId") { type = NavType.StringType })
         ) { backStackEntry ->
             val deckId = backStackEntry.arguments?.getString("deckId")
             if (deckId != null) {
-                CreateFlashcardScreen(navController = navController, deckId = deckId)
+                StudyScreen(navController = navController, deckId = deckId)
             }
         }
     }
