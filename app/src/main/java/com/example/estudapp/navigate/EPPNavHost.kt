@@ -43,14 +43,22 @@ fun EPPNavHost(
         }
 
         composable(
-            route = "flashcard_list/{deckId}",
+            route = "flashcard_list/{deckId}/{deckName}/{deckDesc}",
             arguments = listOf(
-                navArgument("deckId") { type = NavType.StringType }
+                navArgument("deckId") { type = NavType.StringType },
+                navArgument("deckName") { type = NavType.StringType },
+                navArgument("deckDesc") {
+                    type = NavType.StringType
+                    nullable = true
+                }
             )
         ) { backStackEntry ->
             val deckId = backStackEntry.arguments?.getString("deckId")
-            if (deckId != null) {
-                FlashcardListScreen(navController = navController, deckId = deckId)
+            val deckName = backStackEntry.arguments?.getString("deckName")
+            val deckDesc = backStackEntry.arguments?.getString("deckDesc")
+
+            if (deckId != null && deckName != null) {
+                FlashcardListScreen(navController = navController, deckId = deckId, deckName = deckName, deckDesc = deckDesc)
             }
         }
 

@@ -42,12 +42,6 @@ class DeckViewModel : ViewModel() {
             // A lista irá se atualizar automaticamente por causa do listener em tempo real
         }
     }
-
-    fun findDeck(deckId: String){
-        viewModelScope.launch {
-            _currentDeck.value = repository.findDeck(deckId).getOrNull()
-        }
-    }
 }
 
 sealed class DecksUiState {

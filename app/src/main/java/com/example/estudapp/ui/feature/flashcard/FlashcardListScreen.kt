@@ -43,17 +43,13 @@ import java.util.Locale
 fun FlashcardListScreen(
     navController: NavHostController,
     flashcardViewModel: FlashcardViewModel = viewModel(),
-    deckViewModel: DeckViewModel = viewModel(),
     deckId: String,
+    deckName: String,
+    deckDesc: String?
 ) {
     LaunchedEffect(deckId) {
         flashcardViewModel.loadFlashcards(deckId)
-        deckViewModel.findDeck(deckId)
     }
-
-    val deck by deckViewModel.currentDeck.collectAsState()
-
-    val deckName: String? = deck?.name
 
     val uiState by flashcardViewModel.flashcardsState.collectAsState()
 
@@ -69,12 +65,7 @@ fun FlashcardListScreen(
                 },
                 title = { Text("Meus decks", color = PrimaryBlue, fontWeight = FontWeight.Black) },
             )
-        },
-//        floatingActionButton = {
-//            FloatingActionButton(onClick = { navController.navigate("create_flashcard/$deckId") }) {
-//                Icon(Icons.Default.Add, contentDescription = "Adicionar Flashcard")
-//            }
-//        }
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -104,13 +95,9 @@ fun FlashcardListScreen(
                     }
                 }
                 is FlashcardsUiState.Success -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        Text(deckName ?: "Error", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                        Text(deck?.description ?: "", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    }
+                    Text(deckName ?: "Error", fontSize = 26.sp, fontWeight = FontWeight.Black, modifier = Modifier.align(Alignment.Start))
+                    Text(deckDesc ?: "", fontSize = 14.sp, modifier = Modifier.align(Alignment.Start))
+                    Spacer(Modifier.height(30.dp))
 
                     Row (
                         modifier = Modifier
@@ -195,7 +182,10 @@ fun FlashcardListScreen(
                     Spacer(Modifier.height(20.dp))
 
                     TextButton(
-                        onClick = {  },
+                        onClick = {
+                            flashcardViewModel.deleteDeck(deckId)
+                            navController.popBackStack()
+                        },
                     ) {
                         Text("Apagar deck", color = ErrorRed, fontSize = 16.sp, fontWeight = FontWeight.Bold )
                     }

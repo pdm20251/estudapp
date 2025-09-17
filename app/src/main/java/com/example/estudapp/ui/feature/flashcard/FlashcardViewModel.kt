@@ -157,7 +157,14 @@ class FlashcardViewModel : ViewModel() {
             repository.deleteFlashcard(deckId, flashcardId)
         }
     }
+
+    fun deleteDeck(deckId: String) {
+        viewModelScope.launch {
+            repository.deleteDeck(deckId)
+        }
+    }
 }
+
 
 // --- Sealed Classes (sem alterações) ---
 sealed class FlashcardsUiState {

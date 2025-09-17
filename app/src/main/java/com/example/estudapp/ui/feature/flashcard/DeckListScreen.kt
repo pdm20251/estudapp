@@ -156,7 +156,7 @@ fun DeckItem(
             .fillMaxWidth()
             .height(40.dp)
             .clickable(
-                onClick = { navController.navigate("flashcard_list/${deck.id}") }
+                onClick = { navController.navigate("flashcard_list/${deck.id}/${deck.name}/${deck.description}") }
             ),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
