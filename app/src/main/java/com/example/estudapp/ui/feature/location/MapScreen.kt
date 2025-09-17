@@ -1,7 +1,7 @@
 package com.example.estudapp.ui.feature.location
 
-// --- IMPORTS QUE ESTAVAM FALTANDO ---
 import android.Manifest
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -11,11 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.estudapp.data.model.FavoriteLocationDTO // <-- Importante
+import com.example.estudapp.data.model.FavoriteLocationDTO
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.android.gms.maps.CameraUpdateFactory // <-- Importante
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -27,25 +27,54 @@ fun MapScreen(
     locationViewModel: LocationViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val locationPermissionState = rememberPermissionState(
+
+    val foregroundLocationPermission = rememberPermissionState(
         Manifest.permission.ACCESS_FINE_LOCATION
     )
 
-    LaunchedEffect(Unit) {
-        locationPermissionState.launchPermissionRequest()
+    val backgroundLocationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        rememberPermissionState(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+    } else {
+        null
     }
 
-    if (locationPermissionState.status.isGranted) {
+    // --- NOVA LÓGICA DE PERMISSÃO DE NOTIFICAÇÃO ---
+    // 1. Criamos um estado para a permissão de notificação (só no Android 13+)
+    val notificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
+    } else {
+        null
+    }
+
+    // 2. Pedimos a permissão de notificação logo no início, se aplicável
+    LaunchedEffect(notificationPermission) {
+        notificationPermission?.launchPermissionRequest()
+    }
+
+    LaunchedEffect(Unit) {
+        foregroundLocationPermission.launchPermissionRequest()
+    }
+
+    if (foregroundLocationPermission.status.isGranted) {
         LaunchedEffect(Unit) {
             locationViewModel.getCurrentLocation(context)
         }
         MapContent(locationViewModel)
+
+        backgroundLocationPermission?.let {
+            if (!it.status.isGranted) {
+                BackgroundPermissionDialog {
+                    it.launchPermissionRequest()
+                }
+            }
+        }
     } else {
         PermissionDeniedContent {
-            locationPermissionState.launchPermissionRequest()
+            foregroundLocationPermission.launchPermissionRequest()
         }
     }
 }
+
 
 @Composable
 fun MapContent(locationViewModel: LocationViewModel) {
@@ -56,6 +85,7 @@ fun MapContent(locationViewModel: LocationViewModel) {
     var selectedLocation by remember { mutableStateOf<FavoriteLocationDTO?>(null) }
     var locationName by remember { mutableStateOf("") }
     val context = LocalContext.current
+
     val atLimit = locationsState is LocationsUiState.Success &&
             (locationsState as LocationsUiState.Success).locations.size >= 7
 
@@ -76,7 +106,6 @@ fun MapContent(locationViewModel: LocationViewModel) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    // 2. A ação de clique agora verifica o limite primeiro.
                     if (atLimit) {
                         Toast.makeText(context, "Limite de 7 locais atingido!", Toast.LENGTH_SHORT).show()
                     } else if (lastKnownLocation != null) {
@@ -85,7 +114,6 @@ fun MapContent(locationViewModel: LocationViewModel) {
                         Toast.makeText(context, "Aguardando sua localização...", Toast.LENGTH_SHORT).show()
                     }
                 },
-                // 3. Mudamos a cor do botão para indicar que está "desabilitado".
                 containerColor = if (atLimit) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                 else FloatingActionButtonDefaults.containerColor
             ) {
@@ -187,5 +215,33 @@ fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
         Button(onClick = onRequestPermission) {
             Text("Conceder Permissão")
         }
+    }
+}
+
+// ADICIONE ESTE NOVO COMPOSABLE AO SEU ARQUIVO
+@Composable
+fun BackgroundPermissionDialog(onPermissionRequest: () -> Unit) {
+    // Usamos um estado interno para que o diálogo só apareça uma vez por visita à tela
+    var showDialog by remember { mutableStateOf(true) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Permissão Adicional Necessária") },
+            text = { Text("Para que o app possa te notificar sobre locais de estudo mesmo quando estiver fechado, por favor, selecione a opção 'Permitir o tempo todo' na próxima tela de permissão.") },
+            confirmButton = {
+                Button(onClick = {
+                    onPermissionRequest()
+                    showDialog = false
+                }) {
+                    Text("Entendi, continuar")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDialog = false }) {
+                    Text("Agora não")
+                }
+            }
+        )
     }
 }
