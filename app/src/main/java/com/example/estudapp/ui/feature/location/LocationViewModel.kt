@@ -50,6 +50,13 @@ class LocationViewModel : ViewModel() {
         }
     }
 
+    fun deleteFavoriteLocation(locationId: String) {
+        viewModelScope.launch {
+            repository.deleteFavoriteLocation(locationId)
+            // A UI vai se atualizar sozinha, pois o 'getFavoriteLocations' vai emitir a nova lista
+        }
+    }
+
     // Função para buscar a localização atual do dispositivo
     // A anotação SuppressLint é necessária aqui por causa da checagem de permissão do FusedLocationProviderClient
     @SuppressLint("MissingPermission")

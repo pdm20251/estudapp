@@ -42,6 +42,17 @@ class LocationRepository {
         }
     }
 
+    // Deleta uma localização específica do usuário logado
+    suspend fun deleteFavoriteLocation(locationId: String): Result<Unit> {
+        return try {
+            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
+            usersRef.child(userId).child("favoriteLocations").child(locationId).removeValue().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     // Ouve em tempo real as localizações do usuário logado
     fun getFavoriteLocations(): Flow<Result<List<FavoriteLocationDTO>>> = callbackFlow {
         val userId = getCurrentUserId()
@@ -67,4 +78,5 @@ class LocationRepository {
         locationsRef.addValueEventListener(listener)
         awaitClose { locationsRef.removeEventListener(listener) }
     }
+
 }
