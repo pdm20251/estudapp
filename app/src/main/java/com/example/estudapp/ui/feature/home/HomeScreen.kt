@@ -156,7 +156,7 @@ fun HomeScreen(
                     .fillMaxWidth(0.92f)
                     .height(100.dp)
                     .clickable(
-                        onClick = { }
+                        onClick = { navController.navigate("profile") }
                     ),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
