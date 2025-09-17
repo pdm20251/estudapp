@@ -12,4 +12,6 @@ val Pink40 = Color(0xFF7D5260)
 
 val PrimaryBlue = Color(0xFF5665CE)
 val ErrorRed = Color(0xFFFF1717)
-val LightGray= Color(0xFF797979)
+val LightGray= Color(0xFFDBDEEF)
+val Black = Color(0xFF161616)
+val White = Color(0xFFF5F4F2)
