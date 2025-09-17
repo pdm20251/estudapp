@@ -22,14 +22,19 @@ data class FlashcardDTO(
     val respostasValidas: List<String>? = null,
 
     // Campos para Múltipla Escolha
-    val alternativas: List<String>? = null,
-    val respostaCorreta: String? = null,
+    val alternativas: List<AlternativaDTO>? = null,
+    val respostaCorreta: AlternativaDTO? = null,
+
 
     // Campos para o Algoritmo de Repetição Espaçada
     var proximaRevisaoTimestamp: Long = System.currentTimeMillis(),
     var fatorFacilidade: Float = 2.5f,
     var repeticoes: Int = 0,
-    var intervaloEmDias: Int = 1
+    var intervaloEmDias: Int = 1,
+
+    // --- NOVOS CAMPOS DE MÍDIA ---
+    val perguntaImageUrl: String? = null,
+    val perguntaAudioUrl: String? = null
 ) {
     // Construtor vazio exigido pelo Firebase
     constructor() : this(
@@ -48,6 +53,10 @@ data class FlashcardDTO(
         proximaRevisaoTimestamp = System.currentTimeMillis(),
         fatorFacilidade = 2.5f,
         repeticoes = 0,
-        intervaloEmDias = 1
+        intervaloEmDias = 1,
+
+
+        perguntaImageUrl = null,
+        perguntaAudioUrl = null
     )
 }

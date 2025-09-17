@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,10 +46,11 @@ fun DeckListScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(state.decks) { deck ->
-                                DeckItem(deck = deck, onClick = {
-                                    // Navega para a lista de flashcards DAQUELE deck
-                                    navController.navigate("flashcard_list/${deck.id}")
-                                })
+                                // --- CHANGE 1: Pass navController down to DeckItem ---
+                                DeckItem(
+                                    navController = navController,
+                                    deck = deck
+                                )
                             }
                         }
                     }
@@ -59,16 +61,32 @@ fun DeckListScreen(
 }
 
 @Composable
-fun DeckItem(deck: DeckDTO, onClick: () -> Unit) {
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        .clickable(onClick = onClick)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = deck.name, style = MaterialTheme.typography.titleMedium)
-            // Usando let para mostrar a descrição apenas se ela não for nula ou vazia
-            deck.description?.takeIf { it.isNotBlank() }?.let {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = it, style = MaterialTheme.typography.bodySmall)
+fun DeckItem(
+    navController: NavHostController, // --- CHANGE 2: DeckItem now receives the NavController ---
+    deck: DeckDTO
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .clickable { navController.navigate("flashcard_list/${deck.id}") } // The whole card navigates to the list
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = deck.name, style = MaterialTheme.typography.titleMedium)
+                deck.description?.takeIf { it.isNotBlank() }?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = it, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            // --- CHANGE 3: Added the "Estudar" Button ---
+            Button(
+                onClick = { navController.navigate("study_session/${deck.id}") },
+                // Optional: makes the button smaller to fit nicely
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text("Estudar")
             }
         }
     }

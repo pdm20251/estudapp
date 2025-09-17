@@ -57,9 +57,10 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Este botão agora navega para a lista de flashcards
-            Button(onClick = { navController.navigate("flashcard_list") }) {
-                Text("Ver Meus Flashcards")
+            // --- BOTÃO PRINCIPAL ---
+            // Este botão agora navega para a lista de decks
+            Button(onClick = { navController.navigate("deck_list") }) {
+                Text("Meus Decks")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -70,10 +71,6 @@ fun HomeScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = ErrorRed) // Deixa o botão vermelho
             ) {
                 Text("Sair")
-            }
-
-            Button(onClick = { navController.navigate("deck_list") }) {
-                Text("Meus Decks")
             }
         }
     }
