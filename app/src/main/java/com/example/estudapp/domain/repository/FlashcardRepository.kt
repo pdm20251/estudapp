@@ -14,14 +14,19 @@ import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import com.example.estudapp.data.model.DeckPlayStatDTO
 import com.example.estudapp.data.model.ReviewResultDTO
 import com.google.firebase.database.ServerValue
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+
 
 class FlashcardRepository {
 
@@ -32,9 +37,12 @@ class FlashcardRepository {
     private val flashcardsRef = database.getReference("flashcards")
 
     private val statsRef = database.getReference("stats")
-    private fun getCurrentUserId(): String? = auth.currentUser?.uid
 
     private val chatsRef = database.getReference("chats")
+
+    private val usersRef = database.getReference("users")
+
+    private fun getCurrentUserId(): String? = auth.currentUser?.uid
 
     suspend fun getFlashcard(deckId: String, flashcardId: String): Result<FlashcardDTO?> {
         return try {
@@ -60,12 +68,15 @@ class FlashcardRepository {
     }
 
     //Lixeira para deletar flashcard
+// Modifique sua função deleteFlashcard para ficar assim:
     suspend fun deleteFlashcard(deckId: String, flashcardId: String): Result<Unit> {
         return try {
-            // Cria a referência direta para o flashcard que queremos apagar
             val flashcardRef = flashcardsRef.child(deckId).child(flashcardId)
-            // Manda o Firebase remover o valor (deletar o nó)
             flashcardRef.removeValue().await()
+
+            // --- ADICIONE A CHAMADA AQUI ---
+            updateDeckCardCount(deckId, -1) // Decrementa em 1
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -142,6 +153,10 @@ class FlashcardRepository {
             val newFlashcardRef = flashcardsRef.child(deckId).push()
             flashcard.id = newFlashcardRef.key!!
             newFlashcardRef.setValue(flashcard).await()
+
+            // --- ADICIONE A CHAMADA AQUI ---
+            updateDeckCardCount(deckId, 1) // Incrementa em 1
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -278,4 +293,57 @@ class FlashcardRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun getFlashcardsOnce(deckId: String): Result<List<FlashcardDTO>> {
+        return try {
+            val snapshot = flashcardsRef.child(deckId).get().await()
+            val items = snapshot.children.mapNotNull { it.getValue(FlashcardDTO::class.java) }
+            Result.success(items)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun updateDeckCardCount(deckId: String, increment: Int) {
+        val userId = getCurrentUserId() ?: return
+        val deckRef = decksRef.child(userId).child(deckId).child("cardCount")
+
+        // A função foi reescrita para aguardar a transação ser concluída
+        suspendCancellableCoroutine<Unit> { continuation ->
+            deckRef.runTransaction(object : Transaction.Handler {
+                override fun doTransaction(currentData: MutableData): Transaction.Result {
+                    val currentCount = currentData.getValue(Int::class.java) ?: 0
+                    val newCount = currentCount + increment
+                    currentData.value = if (newCount < 0) 0 else newCount
+                    return Transaction.success(currentData)
+                }
+
+                override fun onComplete(
+                    error: DatabaseError?,
+                    committed: Boolean,
+                    currentData: DataSnapshot?
+                ) {
+                    if (error != null) {
+                        // Se a transação falhou, informa a coroutine sobre o erro
+                        continuation.resumeWithException(error.toException())
+                    } else {
+                        // Se a transação foi bem-sucedida, informa a coroutine para continuar
+                        continuation.resume(Unit)
+                    }
+                }
+            })
+        }
+    }
+
+    //Salvar nome em ''users'' no realtime database
+    /* suspend fun saveUserName(userId: String, userName: String): Result<Unit> {
+        return try {
+            usersRef.child(userId).child("user_name").setValue(userName).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+*/
 }

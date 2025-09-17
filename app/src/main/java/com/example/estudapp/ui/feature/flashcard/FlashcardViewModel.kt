@@ -40,7 +40,7 @@ class FlashcardViewModel : ViewModel() {
 
     private var currentSession: DeckSessionManager? = null
 
-    private var currentSessionDeckId:String?=null
+    private var currentSessionDeckId: String? = null
 
     // --- Funções de Carregamento ---
     fun loadFlashcards(deckId: String) {
@@ -53,17 +53,23 @@ class FlashcardViewModel : ViewModel() {
 
                     //LINHA PARA CHAMAR API NO LOGCAT
                     //fetchMyDecksFromApi()
+                    // ----------------------------------------
 
                     //LINHA PARA TESTAR O CHAT
                     //chatAskHardcoded(deckId=null)
+                    // ----------------------------------------
+
+                    // --- ADICIONE A CHAMADA DE TESTE AQUI ---
+                    loadDeckStatistics(deckId)
+                    // ----------------------------------------
 
                     //FIM
 
 
-
                     _flashcardsState.value = FlashcardsUiState.Success(flashcards)
                 }.onFailure { error ->
-                    _flashcardsState.value = FlashcardsUiState.Error(error.message ?: "Erro ao carregar flashcards.")
+                    _flashcardsState.value =
+                        FlashcardsUiState.Error(error.message ?: "Erro ao carregar flashcards.")
                 }
             }
         }
@@ -97,45 +103,102 @@ class FlashcardViewModel : ViewModel() {
         }
     }
 
-    fun saveFrenteVerso(deckId: String, frente: String, verso: String, imagemUri: Uri?, audioUri: Uri?) {
+    fun saveFrenteVerso(
+        deckId: String,
+        frente: String,
+        verso: String,
+        imagemUri: Uri?,
+        audioUri: Uri?
+    ) {
         viewModelScope.launch {
             _saveStatus.value = SaveStatus.Loading
-            val imageUrl = if (imagemUri != null) repository.uploadFile(imagemUri).getOrNull() else null
-            val audioUrl = if (audioUri != null) repository.uploadFile(audioUri).getOrNull() else null
-            val dto = FlashcardDTO(type = FlashcardTypeEnum.FRENTE_VERSO.name, frente = frente, verso = verso, perguntaImageUrl = imageUrl, perguntaAudioUrl = audioUrl)
+            val imageUrl =
+                if (imagemUri != null) repository.uploadFile(imagemUri).getOrNull() else null
+            val audioUrl =
+                if (audioUri != null) repository.uploadFile(audioUri).getOrNull() else null
+            val dto = FlashcardDTO(
+                type = FlashcardTypeEnum.FRENTE_VERSO.name,
+                frente = frente,
+                verso = verso,
+                perguntaImageUrl = imageUrl,
+                perguntaAudioUrl = audioUrl
+            )
             save(deckId, dto)
         }
     }
 
     fun saveCloze(deckId: String, texto: String, respostasMap: Map<String, String>) {
-        val dto = FlashcardDTO(type = FlashcardTypeEnum.CLOZE.name, textoComLacunas = texto, respostasCloze = respostasMap)
+        val dto = FlashcardDTO(
+            type = FlashcardTypeEnum.CLOZE.name,
+            textoComLacunas = texto,
+            respostasCloze = respostasMap
+        )
         save(deckId, dto)
     }
 
-    fun saveDigiteResposta(deckId: String, pergunta: String, respostasList: List<String>, imagemUri: Uri?, audioUri: Uri?) {
+    fun saveDigiteResposta(
+        deckId: String,
+        pergunta: String,
+        respostasList: List<String>,
+        imagemUri: Uri?,
+        audioUri: Uri?
+    ) {
         viewModelScope.launch {
             _saveStatus.value = SaveStatus.Loading
-            val imageUrl = if (imagemUri != null) repository.uploadFile(imagemUri).getOrNull() else null
-            val audioUrl = if (audioUri != null) repository.uploadFile(audioUri).getOrNull() else null
-            val dto = FlashcardDTO(type = FlashcardTypeEnum.DIGITE_RESPOSTA.name, pergunta = pergunta, respostasValidas = respostasList, perguntaImageUrl = imageUrl, perguntaAudioUrl = audioUrl)
+            val imageUrl =
+                if (imagemUri != null) repository.uploadFile(imagemUri).getOrNull() else null
+            val audioUrl =
+                if (audioUri != null) repository.uploadFile(audioUri).getOrNull() else null
+            val dto = FlashcardDTO(
+                type = FlashcardTypeEnum.DIGITE_RESPOSTA.name,
+                pergunta = pergunta,
+                respostasValidas = respostasList,
+                perguntaImageUrl = imageUrl,
+                perguntaAudioUrl = audioUrl
+            )
             save(deckId, dto)
         }
     }
 
-    fun saveMultiplaEscolha(deckId: String, pergunta: String, perguntaImagemUri: Uri?, perguntaAudioUri: Uri?, alternativasUris: List<Pair<String, Uri?>>, respostaCorretaIndex: Int) {
+    fun saveMultiplaEscolha(
+        deckId: String,
+        pergunta: String,
+        perguntaImagemUri: Uri?,
+        perguntaAudioUri: Uri?,
+        alternativasUris: List<Pair<String, Uri?>>,
+        respostaCorretaIndex: Int
+    ) {
         viewModelScope.launch {
             _saveStatus.value = SaveStatus.Loading
             try {
-                val perguntaImageDeferred = async { if (perguntaImagemUri != null) repository.uploadFile(perguntaImagemUri) else null }
-                val perguntaAudioDeferred = async { if (perguntaAudioUri != null) repository.uploadFile(perguntaAudioUri) else null }
-                val alternativasDeferred = alternativasUris.map { (_, uri) -> async { if (uri != null) repository.uploadFile(uri) else null } }
+                val perguntaImageDeferred =
+                    async { if (perguntaImagemUri != null) repository.uploadFile(perguntaImagemUri) else null }
+                val perguntaAudioDeferred =
+                    async { if (perguntaAudioUri != null) repository.uploadFile(perguntaAudioUri) else null }
+                val alternativasDeferred = alternativasUris.map { (_, uri) ->
+                    async {
+                        if (uri != null) repository.uploadFile(uri) else null
+                    }
+                }
 
                 val perguntaImageUrl = perguntaImageDeferred.await()?.getOrNull()
                 val perguntaAudioUrl = perguntaAudioDeferred.await()?.getOrNull()
                 val alternativasUrls = alternativasDeferred.awaitAll().map { it?.getOrNull() }
 
-                val alternativas = alternativasUris.mapIndexed { index, (texto, _) -> AlternativaDTO(text = texto.ifBlank { null }, imageUrl = alternativasUrls[index]) }
-                val dto = FlashcardDTO(type = FlashcardTypeEnum.MULTIPLA_ESCOLHA.name, pergunta = pergunta, perguntaImageUrl = perguntaImageUrl, perguntaAudioUrl = perguntaAudioUrl, alternativas = alternativas, respostaCorreta = alternativas[respostaCorretaIndex])
+                val alternativas = alternativasUris.mapIndexed { index, (texto, _) ->
+                    AlternativaDTO(
+                        text = texto.ifBlank { null },
+                        imageUrl = alternativasUrls[index]
+                    )
+                }
+                val dto = FlashcardDTO(
+                    type = FlashcardTypeEnum.MULTIPLA_ESCOLHA.name,
+                    pergunta = pergunta,
+                    perguntaImageUrl = perguntaImageUrl,
+                    perguntaAudioUrl = perguntaAudioUrl,
+                    alternativas = alternativas,
+                    respostaCorreta = alternativas[respostaCorretaIndex]
+                )
                 save(deckId, dto)
             } catch (e: Exception) {
                 _saveStatus.value = SaveStatus.Error("Falha no upload: ${e.message}")
@@ -155,22 +218,43 @@ class FlashcardViewModel : ViewModel() {
         }
     }
 
-    fun updateFrenteVerso(deckId: String, originalCard: FlashcardDTO, frente: String, verso: String) {
+    fun updateFrenteVerso(
+        deckId: String,
+        originalCard: FlashcardDTO,
+        frente: String,
+        verso: String
+    ) {
         val updatedCard = originalCard.copy(frente = frente, verso = verso)
         updateFlashcard(deckId, updatedCard)
     }
 
-    fun updateCloze(deckId: String, originalCard: FlashcardDTO, texto: String, respostasMap: Map<String, String>) {
+    fun updateCloze(
+        deckId: String,
+        originalCard: FlashcardDTO,
+        texto: String,
+        respostasMap: Map<String, String>
+    ) {
         val updatedCard = originalCard.copy(textoComLacunas = texto, respostasCloze = respostasMap)
         updateFlashcard(deckId, updatedCard)
     }
 
-    fun updateDigiteResposta(deckId: String, originalCard: FlashcardDTO, pergunta: String, respostasList: List<String>) {
+    fun updateDigiteResposta(
+        deckId: String,
+        originalCard: FlashcardDTO,
+        pergunta: String,
+        respostasList: List<String>
+    ) {
         val updatedCard = originalCard.copy(pergunta = pergunta, respostasValidas = respostasList)
         updateFlashcard(deckId, updatedCard)
     }
 
-    fun updateMultiplaEscolha(deckId: String, originalCard: FlashcardDTO, pergunta: String, alternativas: List<AlternativaDTO>, respostaCorretaIndex: Int) {
+    fun updateMultiplaEscolha(
+        deckId: String,
+        originalCard: FlashcardDTO,
+        pergunta: String,
+        alternativas: List<AlternativaDTO>,
+        respostaCorretaIndex: Int
+    ) {
         val updatedCard = originalCard.copy(
             pergunta = pergunta,
             alternativas = alternativas,
@@ -188,15 +272,29 @@ class FlashcardViewModel : ViewModel() {
     fun startDeckSession(deckId: String) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         currentSessionDeckId = deckId
-        currentSession = DeckSessionManager(deckId,uid)
+        currentSession = DeckSessionManager(deckId, uid)
     }
 
-    fun addResultFrenteVerso(cardId: String) { currentSession?.addFrenteVerso(cardId) }
-    fun addResultMultiplaEscolha(cardId: String, isCorrect: Boolean) { currentSession?.addMultiplaEscolha(cardId, isCorrect) }
-    fun addResultCloze(cardId: String, blanksCorrect: Int? = null, blanksTotal: Int? = null, aiScore: Double? = null) {
+    fun addResultFrenteVerso(cardId: String) {
+        currentSession?.addFrenteVerso(cardId)
+    }
+
+    fun addResultMultiplaEscolha(cardId: String, isCorrect: Boolean) {
+        currentSession?.addMultiplaEscolha(cardId, isCorrect)
+    }
+
+    fun addResultCloze(
+        cardId: String,
+        blanksCorrect: Int? = null,
+        blanksTotal: Int? = null,
+        aiScore: Double? = null
+    ) {
         currentSession?.addCloze(cardId, blanksCorrect, blanksTotal, aiScore)
     }
-    fun addResultDigite(cardId: String, aiScore: Double) { currentSession?.addDigiteResposta(cardId, aiScore) }
+
+    fun addResultDigite(cardId: String, aiScore: Double) {
+        currentSession?.addDigiteResposta(cardId, aiScore)
+    }
 
     fun finishAndSaveDeckSession() {
         val session = currentSession?.build() ?: return
@@ -204,7 +302,7 @@ class FlashcardViewModel : ViewModel() {
             repository.saveDeckSessionStat(session)
         }
         currentSession = null
-        currentSessionDeckId=null
+        currentSessionDeckId = null
     }
 
     fun chatAskHardcoded(deckId: String? = null) {
@@ -246,7 +344,8 @@ class FlashcardViewModel : ViewModel() {
 
                     // Tendo o token, continua a chamada de rede em uma thread de background
                     viewModelScope.launch(Dispatchers.IO) {
-                        val url = URL("https://estudapp-api-293741035243.southamerica-east1.run.app/my-decks")
+                        val url =
+                            URL("https://estudapp-api-293741035243.southamerica-east1.run.app/my-decks")
                         val connection = url.openConnection() as HttpURLConnection
                         connection.requestMethod = "GET"
                         connection.setRequestProperty("Authorization", "Bearer $token")
@@ -267,6 +366,51 @@ class FlashcardViewModel : ViewModel() {
                     }
                 } else {
                     Log.e("MyDecksApi", "Falha ao obter token: ${task.exception?.message}")
+                }
+            }
+        }
+    }
+
+    /**
+     * Carrega as estatísticas de todas as sessões de estudo para um deck específico.
+     * Por enquanto, imprime os resultados no Logcat.
+     * No futuro, pode ser adaptada para atualizar um StateFlow na UI.
+     */
+    fun loadDeckStatistics(deckId: String) {
+        viewModelScope.launch {
+            Log.d("DeckStats", "Buscando estatísticas para o deck: $deckId")
+
+            repository.getDeckSessions(deckId).collect { result ->
+                result.onSuccess { sessions ->
+                    if (sessions.isEmpty()) {
+                        Log.d("DeckStats", "Nenhuma sessão de estudo encontrada para este deck.")
+                        return@onSuccess
+                    }
+
+                    Log.d("DeckStats", "--- INÍCIO DAS ESTATÍSTICAS DO DECK ---")
+                    sessions.forEachIndexed { index, session ->
+                        Log.d("DeckStats", "  Sessão #${index + 1}:")
+                        Log.d("DeckStats", "    - ID da Sessão: ${session.id}")
+                        Log.d("DeckStats", "    - Data: ${java.util.Date(session.startedAt ?: 0)}")
+                        Log.d(
+                            "DeckStats",
+                            "    - Pontuação: ${session.totalScore} / ${session.totalPossible}"
+                        )
+                        Log.d(
+                            "DeckStats",
+                            "    - Questões Respondidas: ${session.gradedQuestions} de ${session.totalQuestions}"
+                        )
+                        session.latitude?.let { lat ->
+                            Log.d(
+                                "DeckStats",
+                                "    - Localização: Lat ${lat}, Lng ${session.longitude}"
+                            )
+                        }
+                    }
+                    Log.d("DeckStats", "--- FIM DAS ESTATÍSTICAS DO DECK ---")
+
+                }.onFailure { error ->
+                    Log.e("DeckStats", "Erro ao buscar estatísticas: ${error.message}")
                 }
             }
         }

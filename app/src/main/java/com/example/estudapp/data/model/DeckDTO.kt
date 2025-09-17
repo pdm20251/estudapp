@@ -8,8 +8,10 @@ data class DeckDTO(
     var name: String = "",
     var description: String? = null,
     var cardCount: Int = 0,
-    var userId: String = ""
+    var userId: String = "",
+    // --- CAMPO ADICIONADO ---
+    var proximaRevisaoTimestamp: Long? = null // Armazena a data como um timestamp
 ) {
-    // Construtor vazio exigido pelo Firebase
-    constructor() : this("", "", null, 0, "")
+    // Construtor vazio exigido pelo Firebase, agora com o novo campo
+    constructor() : this("", "", null, 0, "", null)
 }
