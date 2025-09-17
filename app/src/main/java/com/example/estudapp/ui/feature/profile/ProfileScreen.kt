@@ -1,6 +1,5 @@
-package com.example.estudapp.ui.feature.auth
+package com.example.estudapp.ui.feature.profile
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,73 +14,82 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.estudapp.R
+import com.example.estudapp.ui.feature.auth.AuthState
+import com.example.estudapp.ui.feature.auth.AuthViewModel
 import com.example.estudapp.ui.theme.ErrorRed
 import com.example.estudapp.ui.theme.PrimaryBlue
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.navigation.NavHostController
+import com.example.estudapp.navigate.Routes
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignInScreen(
+fun ProfileScreen(
     navController: NavHostController,
     authViewModel: AuthViewModel
 ) {
-    var email by remember {
+    var name by remember {
         mutableStateOf("")
     }
-
-    var password by remember {
-        mutableStateOf("")
-    }
+    //name = authViewModel.auth.currentUser?.displayName ?: ""
 
     val authState = authViewModel.authState.observeAsState()
-    val context = LocalContext.current
 
     LaunchedEffect(authState.value) {
-        when (authState.value) {
-            is AuthState.Autheticated -> {
-                navController.navigate("home")
+        if (authState.value is AuthState.Unauthenticated) {
+            // Se o estado mudar para não autenticado, volta para a tela de login
+            navController.navigate("login") {
+                // Limpa a pilha de navegação para que o usuário não possa voltar para a home
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
             }
-
-            is AuthState.Error -> Toast.makeText(
-                context,
-                (authState.value as AuthState.Error).message,
-                Toast.LENGTH_SHORT
-            ).show()
-
-            else -> Unit
         }
     }
 
     Scaffold (
-        modifier = Modifier,
-
-        ) { paddingValues ->
-
+        topBar = {
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(
+                        onClick = { navController.popBackStack() }
+                    ){
+                        Icon(Icons.Outlined.KeyboardArrowLeft, "goBack", tint = PrimaryBlue, modifier = Modifier.size(35.dp))
+                    }
+                },
+                title = { Text("Perfil", color = PrimaryBlue, fontWeight = FontWeight.Black) },
+            )
+        }
+    ) { paddingValues ->
         Column (
             modifier = Modifier
                 .fillMaxSize()
@@ -89,23 +97,13 @@ fun SignInScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ){
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50f))
-                    .size(160.dp)
-                    .background(PrimaryBlue),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(painter = painterResource(id = R.drawable.logo_white), contentDescription = "Logo", Modifier.size(90.dp))
-            }
+            Image(painter = painterResource(id = R.drawable.icon_profile), contentDescription = null, Modifier
+                .size(120.dp))
 
-            Spacer(Modifier.height(30.dp))
-
-            Text(text = "Estuda++", fontSize = 50.sp, color = PrimaryBlue, fontWeight = FontWeight.Black)
-            Spacer(Modifier.height(50.dp))
+            Spacer(Modifier.height(120.dp))
 
             Text(
-                text = "E-mail", color = PrimaryBlue,
+                text = "Nome", color = PrimaryBlue,
                 fontSize = 18.sp,
                 textAlign = TextAlign.Start,
                 modifier = Modifier
@@ -117,9 +115,9 @@ fun SignInScreen(
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .height(55.dp),
-                value = email,
-                onValueChange = { email = it },
-                placeholder = { Text("exemplo@email.com") },
+                value = name,
+                onValueChange = { name = it },
+                placeholder = { Text("Seu nome") },
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = PrimaryBlue,
                     unfocusedIndicatorColor = PrimaryBlue,
@@ -130,38 +128,10 @@ fun SignInScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
 
-            Spacer(Modifier.height(30.dp))
-
-            Text(
-                text = "Senha", color = PrimaryBlue,
-                fontSize = 18.sp,
-                textAlign = TextAlign.Start,
-                modifier = Modifier
-                    .align(Alignment.Start)
-                    .padding(start = 28.dp)
-            )
-            Spacer(Modifier.height(7.dp))
-            OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth(0.85f)
-                    .height(55.dp),
-                value = password,
-                onValueChange = { password = it },
-                placeholder = { Text("********") },
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = PrimaryBlue,
-                    unfocusedIndicatorColor = PrimaryBlue,
-                    cursorColor = PrimaryBlue,
-                    errorIndicatorColor = ErrorRed
-                ),
-                shape = RoundedCornerShape(30f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-            )
-
-            Spacer(Modifier.height(70.dp))
+            Spacer(Modifier.height(40.dp))
 
             Button(
-                onClick = { authViewModel.login(email, password) },
+                onClick = { /*authViewModel.updateName*/ },
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .height(55.dp),
@@ -169,25 +139,33 @@ fun SignInScreen(
                     containerColor = PrimaryBlue
                 ),
                 shape = RoundedCornerShape(30f),
-                enabled = (email.length >= 1 && password.length >= 8)
+                enabled = (name.length >= 3)
             ) {
-                Text(text = "Entrar", fontSize = 18.sp)
+                Text(text = "Mudar nome", fontSize = 18.sp)
             }
 
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(16.dp))
+            Button(
+                // --- CORREÇÃO AQUI: Usando o texto da rota ---
+                onClick = { navController.navigate("map") },
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .height(55.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryBlue
+                ),
+                shape = RoundedCornerShape(30f),
+            ) {
+                Text(text = "Meus Locais de Estudo", fontSize = 18.sp)
+            }
+
+            Spacer(Modifier.height(40.dp))
 
             TextButton(
-                onClick = { navController.navigate("signup") },
-
+                onClick = { authViewModel.signout() },
                 ) {
-                Text("Não tem uma conta?", color = PrimaryBlue, fontSize = 15.sp)
+                Text("Sair", color = PrimaryBlue, fontSize = 15.sp)
             }
         }
     }
-}
-
-@Preview
-@Composable
-fun SignInScreenPreview() {
-    SignInScreen(navController = NavHostController(LocalContext.current), authViewModel = AuthViewModel())
 }

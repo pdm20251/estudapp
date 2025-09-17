@@ -13,8 +13,11 @@ import com.example.estudapp.ui.feature.flashcard.CreateDeckScreen
 import com.example.estudapp.ui.feature.flashcard.CreateFlashcardScreen
 import com.example.estudapp.ui.feature.flashcard.DeckListScreen
 import com.example.estudapp.ui.feature.flashcard.FlashcardListScreen
+import com.example.estudapp.ui.feature.flashcard.StudyScreen
 import com.example.estudapp.ui.feature.home.HomeScreen
+// Importa as novas telas
 import com.example.estudapp.ui.feature.location.MapScreen
+import com.example.estudapp.ui.feature.profile.ProfileScreen
 
 @Composable
 fun EPPNavHost(
@@ -25,49 +28,78 @@ fun EPPNavHost(
         composable("login") {
             SignInScreen(navController, authViewModel)
         }
-
         composable("signup") {
             SignUpScreen(navController, authViewModel)
         }
-
         composable("home") {
             HomeScreen(navController, authViewModel)
         }
-
-        composable("map") {
-            MapScreen() // Não precisa passar o ViewModel, ele será injetado
+        // Rota da 'main' para a tela de perfil
+        composable("profile") {
+            ProfileScreen(navController, authViewModel)
         }
-
-        // --- NOVAS ROTAS PARA DECKS ---
-
+        // Sua rota da branch 'marcelo' para a tela de mapa
+        composable("map") {
+            MapScreen()
+        }
         composable("deck_list") {
             DeckListScreen(navController)
         }
-
         composable("create_deck") {
             CreateDeckScreen(navController)
         }
 
-        // --- ROTAS ANTIGAS MODIFICADAS PARA ACEITAR O deckId ---
-
+        // A versão mais completa da rota 'flashcard_list' da branch 'main'
         composable(
-            route = "flashcard_list/{deckId}",
-            arguments = listOf(navArgument("deckId") { type = NavType.StringType })
+            route = "flashcard_list/{deckId}/{deckName}/{deckDesc}",
+            arguments = listOf(
+                navArgument("deckId") { type = NavType.StringType },
+                navArgument("deckName") { type = NavType.StringType },
+                navArgument("deckDesc") {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
         ) { backStackEntry ->
             val deckId = backStackEntry.arguments?.getString("deckId")
-            // Garante que o deckId não seja nulo antes de chamar a tela
-            if (deckId != null) {
-                FlashcardListScreen(navController = navController, deckId = deckId)
+            val deckName = backStackEntry.arguments?.getString("deckName")
+            val deckDesc = backStackEntry.arguments?.getString("deckDesc")
+
+            if (deckId != null && deckName != null) {
+                FlashcardListScreen(navController = navController, deckId = deckId, deckName = deckName, deckDesc = deckDesc)
             }
         }
 
+        // A versão mais completa da rota 'create_flashcard' da branch 'main'
         composable(
-            route = "create_flashcard/{deckId}",
+            route = "create_flashcard/{deckId}?flashcardId={flashcardId}",
+            arguments = listOf(
+                navArgument("deckId") { type = NavType.StringType },
+                navArgument("flashcardId") {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) { backStackEntry ->
+            val deckId = backStackEntry.arguments?.getString("deckId")
+            val flashcardId = backStackEntry.arguments?.getString("flashcardId")
+            if (deckId != null) {
+                CreateFlashcardScreen(
+                    navController = navController,
+                    deckId = deckId,
+                    flashcardId = flashcardId
+                )
+            }
+        }
+
+        // Rota da 'main' para a tela de estudo
+        composable(
+            route = "study_session/{deckId}",
             arguments = listOf(navArgument("deckId") { type = NavType.StringType })
         ) { backStackEntry ->
             val deckId = backStackEntry.arguments?.getString("deckId")
             if (deckId != null) {
-                CreateFlashcardScreen(navController = navController, deckId = deckId)
+                StudyScreen(navController = navController, deckId = deckId)
             }
         }
     }
