@@ -97,7 +97,7 @@ fun FlashcardListScreen(
                 is FlashcardsUiState.Success -> {
                     Text(deckName ?: "Error", fontSize = 26.sp, fontWeight = FontWeight.Black, modifier = Modifier.align(Alignment.Start))
                     Text(deckDesc ?: "", fontSize = 14.sp, modifier = Modifier.align(Alignment.Start))
-                    Spacer(Modifier.height(30.dp))
+                    Spacer(Modifier.height(20.dp))
 
                     Row (
                         modifier = Modifier
@@ -156,14 +156,15 @@ fun FlashcardListScreen(
                             Text("Esse deck ainda não\ntem nenhum flashcard :\\", color = PrimaryBlue, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
                         }
                     } else {
-                        Spacer(Modifier.fillMaxHeight(0.15f))
+                        Spacer(Modifier.height(20.dp))
 
                         Text("Flashcards neste deck", color = PrimaryBlue, modifier = Modifier.align(Alignment.Start))
                         Spacer(Modifier.height(10.dp))
 
                         LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            //contentPadding = PaddingValues(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(0.8f),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(state.flashcards) { flashcard ->
@@ -185,7 +186,7 @@ fun FlashcardListScreen(
                         onClick = {
                             flashcardViewModel.deleteDeck(deckId)
                             navController.popBackStack()
-                        },
+                        }
                     ) {
                         Text("Apagar deck", color = ErrorRed, fontSize = 16.sp, fontWeight = FontWeight.Bold )
                     }
