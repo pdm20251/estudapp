@@ -15,6 +15,7 @@ import com.example.estudapp.ui.feature.flashcard.DeckListScreen
 import com.example.estudapp.ui.feature.flashcard.FlashcardListScreen
 import com.example.estudapp.ui.feature.flashcard.StudyScreen
 import com.example.estudapp.ui.feature.home.HomeScreen
+import com.example.estudapp.ui.feature.profile.ProfileScreen
 
 @Composable
 fun EPPNavHost(
@@ -30,6 +31,9 @@ fun EPPNavHost(
         }
         composable("home") {
             HomeScreen(navController, authViewModel)
+        }
+        composable("profile") {
+            ProfileScreen(navController, authViewModel)
         }
         composable("deck_list") {
             DeckListScreen(navController)
