@@ -115,7 +115,7 @@ fun HomeScreen(
                 Column(
                     Modifier.align(Alignment.Bottom)
                 ) {
-                    Text("Ver meus\nflashcards", color = PrimaryBlue, fontSize = 14.sp, lineHeight = 16.sp)
+                    Text("Ver os\nmeus decks", color = PrimaryBlue, fontSize = 14.sp, lineHeight = 16.sp)
                     Text("Estudar", color = Black, fontWeight = FontWeight.Black, fontSize = 22.sp)
                 }
 
