@@ -55,14 +55,11 @@ fun HomeScreen(
     navController: NavHostController,
     authViewModel: AuthViewModel
 ) {
-    // Observa o estado de autenticação para reagir ao logout
     val authState = authViewModel.authState.observeAsState()
 
     LaunchedEffect(authState.value) {
         if (authState.value is AuthState.Unauthenticated) {
-            // Se o estado mudar para não autenticado, volta para a tela de login
             navController.navigate("login") {
-                // Limpa a pilha de navegação para que o usuário não possa voltar para a home
                 popUpTo(navController.graph.startDestinationId) {
                     inclusive = true
                 }
