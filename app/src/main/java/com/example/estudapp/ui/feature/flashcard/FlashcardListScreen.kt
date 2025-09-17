@@ -1,21 +1,41 @@
 package com.example.estudapp.ui.feature.flashcard
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.estudapp.R
 import com.example.estudapp.data.model.FlashcardDTO
 import com.example.estudapp.data.model.FlashcardTypeEnum
+import com.example.estudapp.ui.theme.Black
+import com.example.estudapp.ui.theme.DarkBlue
+import com.example.estudapp.ui.theme.ErrorRed
+import com.example.estudapp.ui.theme.LightGray
+import com.example.estudapp.ui.theme.PrimaryBlue
+import com.example.estudapp.ui.theme.White
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,42 +43,140 @@ import java.util.Locale
 fun FlashcardListScreen(
     navController: NavHostController,
     flashcardViewModel: FlashcardViewModel = viewModel(),
-    deckId: String
+    deckViewModel: DeckViewModel = viewModel(),
+    deckId: String,
 ) {
     LaunchedEffect(deckId) {
         flashcardViewModel.loadFlashcards(deckId)
+        deckViewModel.findDeck(deckId)
     }
+
+    val deck by deckViewModel.currentDeck.collectAsState()
+
+    val deckName: String? = deck?.name
 
     val uiState by flashcardViewModel.flashcardsState.collectAsState()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Flashcards do Deck") }) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate("create_flashcard/$deckId") }) {
-                Icon(Icons.Default.Add, contentDescription = "Adicionar Flashcard")
-            }
-        }
+        topBar = {
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(
+                        onClick = { navController.popBackStack() }
+                    ){
+                        Icon(Icons.Outlined.KeyboardArrowLeft, "goBack", tint = PrimaryBlue, modifier = Modifier.size(35.dp))
+                    }
+                },
+                title = { Text("Meus decks", color = PrimaryBlue, fontWeight = FontWeight.Black) },
+            )
+        },
+//        floatingActionButton = {
+//            FloatingActionButton(onClick = { navController.navigate("create_flashcard/$deckId") }) {
+//                Icon(Icons.Default.Add, contentDescription = "Adicionar Flashcard")
+//            }
+//        }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .padding(top = 20.dp, bottom = 20.dp, start = 30.dp, end = 30.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             when (val state = uiState) {
-                is FlashcardsUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                is FlashcardsUiState.Error -> Text(state.message, modifier = Modifier.align(Alignment.Center))
+                is FlashcardsUiState.Loading -> {
+                    Spacer(Modifier.fillMaxHeight(0.5f))
+                    CircularProgressIndicator(color = PrimaryBlue)
+                }
+                is FlashcardsUiState.Error -> {
+                    Spacer(Modifier.fillMaxHeight(0.5f))
+                    Column(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(30f))
+                            .background(LightGray)
+                            .padding(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ){
+                        Icon(Icons.Outlined.Warning, contentDescription = "warning", tint = PrimaryBlue)
+                        Text(state.message, color = PrimaryBlue, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
+                    }
+                }
                 is FlashcardsUiState.Success -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Text(deckName ?: "Error", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(deck?.description ?: "", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Row (
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(30f))
+                            .background(DarkBlue)
+                            .padding(13.dp)
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .clickable(
+                                onClick = { navController.navigate("study_session/${deckId}") },
+                                enabled = !state.flashcards.isEmpty()
+                            ),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(painter = painterResource(id = R.drawable.icon_thunderbolt), contentDescription = null, Modifier
+                            .size(40.dp))
+
+                        Spacer(Modifier.width(15.dp))
+
+                        Text(text = "Começar a estudar", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = White)
+                    }
+                    Spacer(Modifier.height(18.dp))
+
+                    Row (
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(30f))
+                            .background(PrimaryBlue)
+                            .padding(13.dp)
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .clickable(
+                                onClick = { navController.navigate("create_flashcard/$deckId") }
+                            ),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null, tint = White, modifier = Modifier.size(40.dp))
+
+                        Spacer(Modifier.width(15.dp))
+
+                        Text(text = "Criar novo card", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = White)
+                    }
                     if (state.flashcards.isEmpty()) {
-                        Text(
-                            text = "Nenhum flashcard neste deck. Clique no '+' para começar!",
+                        Spacer(Modifier.fillMaxHeight(0.4f))
+                        Column(
                             modifier = Modifier
-                                .align(Alignment.Center)
-                                .padding(horizontal = 16.dp)
-                        )
+                                .clip(RoundedCornerShape(30f))
+                                .background(LightGray)
+                                .padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ){
+                            Icon(Icons.Outlined.Info, contentDescription = "info", tint = PrimaryBlue)
+                            Spacer(Modifier.height(4.dp))
+                            Text("Esse deck ainda não\ntem nenhum flashcard :\\", color = PrimaryBlue, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
+                        }
                     } else {
+                        Spacer(Modifier.fillMaxHeight(0.15f))
+
+                        Text("Flashcards neste deck", color = PrimaryBlue, modifier = Modifier.align(Alignment.Start))
+                        Spacer(Modifier.height(10.dp))
+
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
+                            //contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(state.flashcards) { flashcard ->
@@ -68,12 +186,18 @@ fun FlashcardListScreen(
                                         flashcardViewModel.deleteFlashcard(deckId, flashcard.id)
                                     },
                                     onEditClick = {
-                                        // Navega para a tela de edição passando os IDs
                                         navController.navigate("create_flashcard/${deckId}?flashcardId=${flashcard.id}")
                                     }
                                 )
                             }
                         }
+                    }
+                    Spacer(Modifier.height(20.dp))
+
+                    TextButton(
+                        onClick = {  },
+                    ) {
+                        Text("Apagar deck", color = ErrorRed, fontSize = 16.sp, fontWeight = FontWeight.Bold )
                     }
                 }
             }
@@ -81,40 +205,45 @@ fun FlashcardListScreen(
     }
 }
 
-@Composable // A anotação @Composable é essencial aqui
+@Composable
 fun FlashcardItem(
     flashcard: FlashcardDTO,
     onDeleteClick: () -> Unit,
-    onEditClick: () -> Unit // Parâmetro para a ação de editar
+    onEditClick: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f).padding(vertical = 8.dp)) {
-                Text(
-                    text = flashcard.type.replace("_", " ").lowercase(Locale.getDefault()),
-                    style = MaterialTheme.typography.labelSmall
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                val title = when (flashcard.type) {
-                    FlashcardTypeEnum.FRENTE_VERSO.name -> flashcard.frente
-                    FlashcardTypeEnum.CLOZE.name -> flashcard.textoComLacunas?.replace(Regex("\\{\\{(c\\d+)::.*?\\}\\}"), "{{....}}")
-                    else -> flashcard.pergunta
-                }
-                Text(text = title ?: "Flashcard inválido", style = MaterialTheme.typography.bodyLarge)
+    Row (
+        modifier = Modifier
+            .border(
+                width = 1.dp,
+                color = LightGray,
+                shape = RoundedCornerShape(30f)
+            )
+            .padding(8.dp)
+            .fillMaxWidth()
+            //.height(60.dp)
+            .clickable(
+                onClick = onEditClick
+            ),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Column(modifier = Modifier.weight(1f).padding(vertical = 8.dp)) {
+            Text(
+                text = flashcard.type.replace("_", " / ").lowercase(Locale.getDefault()),
+                style = MaterialTheme.typography.labelSmall,
+                color = PrimaryBlue
+            )
+            Spacer(modifier = Modifier.height(1.dp))
+            val title = when (flashcard.type) {
+                FlashcardTypeEnum.FRENTE_VERSO.name -> flashcard.frente
+                FlashcardTypeEnum.CLOZE.name -> flashcard.textoComLacunas?.replace(Regex("\\{\\{(c\\d+)::.*?\\}\\}"), "{{....}}")
+                else -> flashcard.pergunta
             }
-            // Botões de Ação
-            Row {
-                IconButton(onClick = onEditClick) {
-                    Icon(Icons.Default.Edit, contentDescription = "Editar Flashcard")
-                }
-                IconButton(onClick = onDeleteClick) {
-                    Icon(Icons.Default.Delete, contentDescription = "Deletar Flashcard")
-                }
-            }
+            Text(text = title ?: "Flashcard inválido", fontSize = 14.sp)
+        }
+
+        IconButton(onClick = onDeleteClick) {
+            Icon(Icons.Default.Delete, contentDescription = "Deletar Flashcard", tint = ErrorRed)
         }
     }
 }

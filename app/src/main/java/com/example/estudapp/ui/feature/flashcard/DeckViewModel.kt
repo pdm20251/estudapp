@@ -17,6 +17,9 @@ class DeckViewModel : ViewModel() {
     private val _decksState = MutableStateFlow<DecksUiState>(DecksUiState.Loading)
     val decksState: StateFlow<DecksUiState> = _decksState.asStateFlow()
 
+    private val _currentDeck = MutableStateFlow<DeckDTO?>(null)
+    val currentDeck: StateFlow<DeckDTO?> = _currentDeck.asStateFlow()
+
     init {
         loadDecks()
     }
@@ -37,6 +40,12 @@ class DeckViewModel : ViewModel() {
         viewModelScope.launch {
             repository.saveDeck(name, description)
             // A lista irá se atualizar automaticamente por causa do listener em tempo real
+        }
+    }
+
+    fun findDeck(deckId: String){
+        viewModelScope.launch {
+            _currentDeck.value = repository.findDeck(deckId).getOrNull()
         }
     }
 }

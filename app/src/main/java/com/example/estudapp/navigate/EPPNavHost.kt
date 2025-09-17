@@ -44,7 +44,9 @@ fun EPPNavHost(
 
         composable(
             route = "flashcard_list/{deckId}",
-            arguments = listOf(navArgument("deckId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("deckId") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val deckId = backStackEntry.arguments?.getString("deckId")
             if (deckId != null) {
@@ -52,7 +54,6 @@ fun EPPNavHost(
             }
         }
 
-        // --- ESTA É A ROTA CORRIGIDA ---
         composable(
             route = "create_flashcard/{deckId}?flashcardId={flashcardId}",
             arguments = listOf(
@@ -69,7 +70,7 @@ fun EPPNavHost(
                 CreateFlashcardScreen(
                     navController = navController,
                     deckId = deckId,
-                    flashcardId = flashcardId // Agora esta chamada está correta
+                    flashcardId = flashcardId
                 )
             }
         }

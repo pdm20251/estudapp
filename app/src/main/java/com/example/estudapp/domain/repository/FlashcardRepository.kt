@@ -35,6 +35,16 @@ class FlashcardRepository {
         }
     }
 
+    suspend fun findDeck(deckId: String): Result<DeckDTO?> {
+        return try {
+            val snapshot = flashcardsRef.child(deckId).get().await()
+            val deck = snapshot.getValue(DeckDTO::class.java)
+            Result.success(deck)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     //Função para editar flashcards
     suspend fun updateFlashcard(deckId: String, flashcard: FlashcardDTO): Result<Unit> {
         return try {

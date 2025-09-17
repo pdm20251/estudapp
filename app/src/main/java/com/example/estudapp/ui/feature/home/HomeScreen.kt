@@ -89,8 +89,7 @@ fun HomeScreen(
 
                 Image(painter = painterResource(id = R.drawable.logo_white), contentDescription = null, Modifier
                         .size(30.dp)
-                        .align(Alignment.Bottom)
-                )
+                        .align(Alignment.Bottom))
             }
 
             Spacer(Modifier.height(2.dp))
