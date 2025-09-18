@@ -3,16 +3,20 @@ package com.example.estudapp.ui.feature.location
 import android.Manifest
 import android.os.Build
 import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.example.estudapp.data.model.FavoriteLocationDTO
+import com.example.estudapp.ui.theme.PrimaryBlue
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -21,11 +25,12 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-import java.util.Locale
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
+    // --- 1. RECEBE O NAVCONTROLLER ---
+    navController: NavHostController,
     locationViewModel: LocationViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -58,23 +63,18 @@ fun MapScreen(
         LaunchedEffect(Unit) {
             locationViewModel.getCurrentLocation(context)
         }
-        MapContent(locationViewModel)
+        // --- 2. PASSA O NAVCONTROLLER ADIANTE ---
+        MapContent(navController, locationViewModel)
 
         backgroundLocationPermission?.let {
             if (it.status.isGranted) {
-                // --- CORREÇÃO IMPORTANTE AQUI ---
-                // Agora que temos todas as permissões, observamos a lista de locais.
-                // Assim que a lista for carregada com sucesso, registamos os Geofences.
                 val locationsState by locationViewModel.locationsState.collectAsState()
                 if (locationsState is LocationsUiState.Success) {
-                    // Este LaunchedEffect será executado novamente se a lista de locais mudar (adicionar/deletar),
-                    // mantendo os geofences sempre sincronizados.
                     LaunchedEffect(locationsState) {
                         locationViewModel.registerAllGeofences(context)
                     }
                 }
             } else {
-                // Se não tiver a permissão de background, pedimos.
                 BackgroundPermissionDialog {
                     it.launchPermissionRequest()
                 }
@@ -88,8 +88,13 @@ fun MapScreen(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapContent(locationViewModel: LocationViewModel) {
+fun MapContent(
+    // --- 3. RECEBE O NAVCONTROLLER AQUI TAMBÉM ---
+    navController: NavHostController,
+    locationViewModel: LocationViewModel
+) {
     val locationsState by locationViewModel.locationsState.collectAsState()
     val lastKnownLocation by locationViewModel.lastKnownLocation.collectAsState()
 
@@ -101,7 +106,7 @@ fun MapContent(locationViewModel: LocationViewModel) {
     val atLimit = locationsState is LocationsUiState.Success &&
             (locationsState as LocationsUiState.Success).locations.size >= 7
 
-    val defaultLocation = LatLng(-18.9186, -48.2772)
+    val defaultLocation = LatLng(-18.9186, -48.2772) // Uberlândia
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(lastKnownLocation ?: defaultLocation, 15f)
     }
@@ -115,6 +120,22 @@ fun MapContent(locationViewModel: LocationViewModel) {
     }
 
     Scaffold(
+        // --- 4. ADICIONA A BARRA SUPERIOR (TOPAPPBAR) ---
+        topBar = {
+            TopAppBar(
+                title = { Text("Meus Locais", color = PrimaryBlue, fontWeight = FontWeight.Black) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Outlined.KeyboardArrowLeft,
+                            contentDescription = "Voltar para o perfil",
+                            tint = PrimaryBlue,
+                            modifier = Modifier.size(35.dp)
+                        )
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
@@ -135,7 +156,9 @@ fun MapContent(locationViewModel: LocationViewModel) {
         floatingActionButtonPosition = FabPosition.Center
     ) { padding ->
         GoogleMap(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
             cameraPositionState = cameraPositionState,
             uiSettings = MapUiSettings(zoomControlsEnabled = false)
         ) {
@@ -221,7 +244,9 @@ fun MapContent(locationViewModel: LocationViewModel) {
 @Composable
 fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -258,3 +283,4 @@ fun BackgroundPermissionDialog(onPermissionRequest: () -> Unit) {
         )
     }
 }
+

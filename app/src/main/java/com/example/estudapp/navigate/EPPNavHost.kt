@@ -44,7 +44,7 @@ fun EPPNavHost(
             ProfileScreen(navController, authViewModel)
         }
         composable("map") {
-            MapScreen(locationViewModel)
+            MapScreen(navController, locationViewModel)
         }
         composable("deck_list") {
             DeckListScreen(navController)
