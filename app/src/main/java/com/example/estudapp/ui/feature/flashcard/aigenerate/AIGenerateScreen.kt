@@ -169,9 +169,7 @@ fun AIGenerateScreen(
                     cursorColor = PrimaryBlue,
                     errorIndicatorColor = ErrorRed
                 ),
-                shape = RoundedCornerShape(30f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                singleLine = true
+                shape = RoundedCornerShape(30f)
             )
 
             Spacer(Modifier.height(40.dp))
