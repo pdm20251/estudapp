@@ -42,9 +42,12 @@ class FlashcardViewModel : ViewModel() {
     private val _cardToEdit = MutableStateFlow<FlashcardDTO?>(null)
     val cardToEdit: StateFlow<FlashcardDTO?> = _cardToEdit.asStateFlow()
 
-    private var currentSession: DeckSessionManager? = null
+    var currentSession: DeckSessionManager? = null
 
     private var currentSessionDeckId: String? = null
+
+    var currentSessionTotalScore: Double? = 0.0
+    var currentSessionPossibleScore: Double? = 0.0
 
     // --- Funções de Carregamento ---
     fun loadFlashcards(deckId: String) {
@@ -296,6 +299,8 @@ class FlashcardViewModel : ViewModel() {
         viewModelScope.launch {
             repository.saveDeckSessionStat(session)
         }
+        currentSessionTotalScore = currentSession!!.getTotalScore()
+        currentSessionPossibleScore = currentSession!!.getPossibleScore()
         currentSession = null
         currentSessionDeckId = null
     }
@@ -440,6 +445,15 @@ class FlashcardViewModel : ViewModel() {
                 connection.disconnect()
             }
         }
+    }
+
+    fun getScoreValues(): List<Double>{
+        val values = listOf<Double>(
+            currentSession?.getTotalScore() ?: 30.0,
+            currentSession?.getPossibleScore() ?: 30.0
+        )
+
+        return values
     }
 
     fun deleteDeck(deckId: String) {

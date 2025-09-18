@@ -30,6 +30,13 @@ class StudyViewModel : ViewModel() {
     private val _messages = MutableStateFlow<List<SimpleChatMessageDTO>>(emptyList())
     val messages: StateFlow<List<SimpleChatMessageDTO>> = _messages.asStateFlow()
 
+    var currentSessionTotalScore: Double? = 0.0
+    var currentSessionPossibleScore: Double? = 0.0
+
+    private val _scoreValues = MutableStateFlow<List<Double>>(listOf(0.0, 0.0))
+    val scoreValues: StateFlow<List<Double>> = _scoreValues.asStateFlow()
+
+
     init {
         // Começa a ouvir por mensagens do utilizador assim que o ViewModel é criado
         observeMessages()
@@ -184,6 +191,9 @@ class StudyViewModel : ViewModel() {
                 clozeFeedback = null
             )
         } else {
+            var list = flashcardViewModel.getScoreValues()
+            _scoreValues.value = ArrayList(list)
+
             flashcardViewModel.finishAndSaveDeckSession()
             _uiState.value = StudyUiState.SessionFinished
         }

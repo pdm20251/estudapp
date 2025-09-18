@@ -91,6 +91,14 @@ class DeckSessionManager(
         totalPossible += 10.0
     }
 
+    fun getTotalScore(): Double{
+        return totalScore
+    }
+
+    fun getPossibleScore(): Double{
+        return totalPossible
+    }
+
     /** Monta DTO final para salvar no RTDB. */
     fun build(): DeckPlayStatDTO {
         val finishedAt = System.currentTimeMillis()
