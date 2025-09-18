@@ -5,13 +5,16 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import com.example.estudapp.R
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -21,12 +24,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -237,7 +243,9 @@ private fun FormFrenteVerso(
             viewModel.saveFrenteVerso(deckId, frente, verso, imagemUri, audioUri)
         }
     }
+
     Spacer(Modifier.height(16.dp))
+
     GenerateCardButton(
         /* Inserir aqui lógica para gerar card com LLM. */
     )
@@ -284,6 +292,12 @@ private fun FormCloze(
             viewModel.saveCloze(deckId, texto, respostasMap)
         }
     }
+
+    Spacer(Modifier.height(16.dp))
+
+    GenerateCardButton(
+        /* Inserir aqui lógica para gerar card com LLM. */
+    )
 }
 
 @Composable
@@ -315,49 +329,99 @@ private fun FormDigiteResposta(
         }
     }
 
-    OutlinedTextField(
-        value = pergunta,
-        onValueChange = { pergunta = it },
-        label = { Text("Pergunta") },
-        modifier = Modifier.fillMaxWidth()
+    Text(
+        text = "Pergunta",
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        modifier = Modifier.padding(vertical = 8.dp),
+        textAlign = TextAlign.Left
     )
 
-    Spacer(Modifier.height(16.dp))
-    // Pré-visualização de mídia (apenas se selecionar nova na criação)
-    if (imagemUri != null) {
-        AsyncImage(
-            model = imagemUri, contentDescription = "Imagem selecionada",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .clip(RoundedCornerShape(12.dp)),
-            contentScale = ContentScale.Crop
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(8.dp),
+    ) {
+        TextField(
+            label = { Text("Pergunta") },
+            value = pergunta,
+            onValueChange = { pergunta = it },
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent)
         )
-        Spacer(Modifier.height(8.dp))
-    }
-    if (audioUri != null) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Audiotrack, contentDescription = "Áudio selecionado")
-            Spacer(Modifier.width(8.dp))
-            Text("Áudio selecionado!")
+
+        Spacer(Modifier.height(16.dp))
+        // Pré-visualização de mídia (apenas se selecionar nova na criação)
+        if (imagemUri != null) {
+            AsyncImage(
+                model = imagemUri, contentDescription = "Imagem selecionada",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
+            )
         }
-        Spacer(Modifier.height(8.dp))
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        IconButton(onClick = { imagePicker.launch("image/*") }) {
-            Icon(Icons.Default.AddAPhoto, contentDescription = "Adicionar Imagem")
+        Spacer(Modifier.height(16.dp))
+
+        if (audioUri != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Audiotrack, contentDescription = "Áudio selecionado")
+                Spacer(Modifier.width(8.dp))
+                Text("Áudio selecionado!")
+            }
+            Spacer(Modifier.height(8.dp))
         }
-        IconButton(onClick = { audioPicker.launch("audio/*") }) {
-            Icon(Icons.Default.Audiotrack, contentDescription = "Adicionar Áudio")
+
+        Spacer(Modifier.height(24.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            IconButton(onClick = { imagePicker.launch("image/*") }) {
+                Icon(Icons.Default.AddAPhoto,
+                    contentDescription = "Adicionar Imagem",
+                    tint = MaterialTheme.colorScheme.primary)
+            }
+            IconButton(onClick = { audioPicker.launch("audio/*") }) {
+                Icon(Icons.Default.Audiotrack,
+                    contentDescription = "Adicionar Áudio",
+                    tint = MaterialTheme.colorScheme.primary)
+            }
         }
     }
 
+
     Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = "Resposta",
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        modifier = Modifier.padding(vertical = 8.dp),
+        textAlign = TextAlign.Left
+    )
+    Text(
+        text = "Separe cada resposta por uma vírgula",
+        fontSize = 12.sp,
+        textAlign = TextAlign.Left
+    )
+
+    Spacer(Modifier.height(8.dp))
+
     OutlinedTextField(
         value = respostas,
         onValueChange = { respostas = it },
-        label = { Text("Respostas válidas (separadas por vírgula)") },
-        modifier = Modifier.fillMaxWidth()
+        label = { Text("Respostas certas") },
+        modifier = Modifier.fillMaxWidth().height(80.dp),
+        shape = RoundedCornerShape(16.dp)
     )
 
     Spacer(Modifier.height(32.dp))
@@ -374,6 +438,13 @@ private fun FormDigiteResposta(
             viewModel.saveDigiteResposta(deckId, pergunta, respostasList, imagemUri, audioUri)
         }
     }
+
+    Spacer(Modifier.height(16.dp))
+
+    GenerateCardButton(
+        /* Inserir aqui lógica para gerar card com LLM. */
+    )
+
 }
 
 @Composable
@@ -421,13 +492,22 @@ private fun FormMultiplaEscolha(
         }
     }
 
-    Text("Pergunta", style = MaterialTheme.typography.titleMedium)
+    Text(
+        text = "Frente (Pergunta)",
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        modifier = Modifier.padding(vertical = 8.dp),
+        textAlign = TextAlign.Left
+    )
+
     OutlinedTextField(
         value = pergunta,
         onValueChange = { pergunta = it },
-        label = { Text("Texto da pergunta (opcional se tiver imagem)") },
-        modifier = Modifier.fillMaxWidth()
+        label = { Text("Texto da pergunta") },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp)
     )
+
     MediaSelector(
         imageUri = perguntaImagemUri,
         audioUri = perguntaAudioUri,
@@ -437,7 +517,13 @@ private fun FormMultiplaEscolha(
 
     Spacer(Modifier.height(24.dp))
 
-    Text("Alternativas", style = MaterialTheme.typography.titleMedium)
+    Text(
+        text = "Alternativas",
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        modifier = Modifier.padding(vertical = 8.dp),
+        textAlign = TextAlign.Left
+    )
 
     @Composable
     fun AlternativaInput(
@@ -451,25 +537,57 @@ private fun FormMultiplaEscolha(
             rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { newUri: Uri? ->
                 onUriChange(newUri)
             }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = texto,
-                onValueChange = onTextoChange,
-                label = { Text(label) },
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(onClick = { launcher.launch("image/*") }) {
-                Icon(Icons.Default.AddAPhoto, contentDescription = "Adicionar Imagem à Alternativa")
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = texto,
+                    onValueChange = onTextoChange,
+                    label = { Text(label) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                    ),
+                    modifier = Modifier.weight(1f).fillMaxWidth().padding(1.dp),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                IconButton(onClick = { launcher.launch("image/*") }) {
+                    Icon(
+                        Icons.Default.AddPhotoAlternate,
+                        contentDescription = "Adicionar Imagem à Alternativa",
+                        tint = Color.Gray
+                    )
+                }
             }
-        }
-        if (uri != null) {
-            AsyncImage(
-                model = uri,
-                contentDescription = "Preview da alternativa",
-                modifier = Modifier
-                    .height(60.dp)
-                    .padding(start = 16.dp)
-            )
+
+            if (uri != null) {
+                AsyncImage(
+                    model = uri,
+                    contentDescription = "Preview da alternativa",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
         }
     }
 
@@ -479,7 +597,11 @@ private fun FormMultiplaEscolha(
     AlternativaInput(alt4Texto, { alt4Texto = it }, alt4Uri, { alt4Uri = it }, "Alternativa 4")
 
     Spacer(Modifier.height(16.dp))
-    Text("Qual é a alternativa correta?")
+    Text("Qual é a alternativa correta?",
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        modifier = Modifier.padding(vertical = 8.dp),
+        textAlign = TextAlign.Left)
     Column {
         (0..3).forEach { index ->
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -546,6 +668,10 @@ private fun FormMultiplaEscolha(
             )
         }
     }
+    Spacer(modifier = Modifier.height(16.dp))
+    GenerateCardButton(
+        /* Inserir aqui lógica para gerar card com LLM. */
+    )
 }
 
 /* ======================= HELPERS ======================= */
@@ -570,16 +696,16 @@ fun MediaSelector(
     }
     if (audioUri != null) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Audiotrack, contentDescription = "Áudio selecionado")
+            Icon(Icons.Default.Audiotrack, contentDescription = "Áudio selecionado", tint = MaterialTheme.colorScheme.primary)
             Text("Áudio selecionado!")
         }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         IconButton(onClick = onImageClick) {
-            Icon(Icons.Default.AddAPhoto, contentDescription = "Adicionar Imagem")
+            Icon(Icons.Default.AddAPhoto, contentDescription = "Adicionar Imagem", tint = MaterialTheme.colorScheme.primary)
         }
         IconButton(onClick = onAudioClick) {
-            Icon(Icons.Default.Audiotrack, contentDescription = "Adicionar Áudio")
+            Icon(Icons.Default.Audiotrack, contentDescription = "Adicionar Áudio", tint = MaterialTheme.colorScheme.primary)
         }
     }
 }

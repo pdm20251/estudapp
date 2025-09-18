@@ -62,7 +62,8 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation("com.google.firebase:firebase-database-ktx")
     implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.ui.graphics) // Adicionado corretamente
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.material3) // Adicionado corretamente
 
     // Dependências de Teste
     testImplementation(libs.junit)
