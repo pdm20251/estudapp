@@ -90,6 +90,7 @@ class StudyViewModel : ViewModel() {
         multipleChoiceAnswer: AlternativaDTO? = null
     ) {
         val currentState = _uiState.value
+      
         // Trava a função se já houver uma verificação em andamento
         if (currentState is StudyUiState.Studying && !_isProcessing.value) {
             _isProcessing.value = true // Inicia o travamento

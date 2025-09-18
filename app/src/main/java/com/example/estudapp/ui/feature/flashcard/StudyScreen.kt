@@ -1,12 +1,22 @@
 package com.example.estudapp.ui.feature.flashcard
 
+import android.hardware.lights.Light
 import android.media.MediaPlayer
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,12 +31,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.estudapp.data.model.AlternativaDTO
 import com.example.estudapp.data.model.FlashcardDTO
 import com.example.estudapp.data.model.FlashcardTypeEnum
+import com.example.estudapp.ui.theme.ErrorRed
+import com.example.estudapp.ui.theme.LightGray
+import com.example.estudapp.ui.theme.PrimaryBlue
+import com.example.estudapp.ui.theme.White
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,7 +49,8 @@ import java.util.Locale
 fun StudyScreen(
     navController: NavHostController,
     studyViewModel: StudyViewModel = viewModel(),
-    deckId: String
+    deckId: String,
+    deckName: String
 ) {
     LaunchedEffect(deckId) {
         studyViewModel.startStudySession(deckId)
@@ -43,27 +59,103 @@ fun StudyScreen(
     val uiState by studyViewModel.uiState.collectAsState()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Sessão de Estudo") }) }
+        topBar = {
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(
+                        onClick = { navController.popBackStack() }
+                    ){
+                        Icon(Icons.Outlined.KeyboardArrowLeft, "goBack", tint = PrimaryBlue, modifier = Modifier.size(35.dp))
+                    }
+                },
+                title = { Text("Estudar", color = PrimaryBlue, fontWeight = FontWeight.Black) },
+            )
+        }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp),
-            contentAlignment = Alignment.Center
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Text(deckName ?: "Error", fontSize = 24.sp, fontWeight = FontWeight.Black, modifier = Modifier.align(Alignment.Start))
+
             when (val state = uiState) {
                 is StudyUiState.Loading -> CircularProgressIndicator()
-                is StudyUiState.Error -> Text(state.message)
-                is StudyUiState.EmptyDeck -> Text("Este deck não tem cards para estudar.")
-                is StudyUiState.SessionFinished -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Sessão finalizada!", style = MaterialTheme.typography.headlineMedium)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { navController.popBackStack() }) {
-                            Text("Voltar para os Decks")
-                        }
+                is StudyUiState.Error -> {
+                    Column(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(30f))
+                            .background(LightGray)
+                            .padding(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ){
+                        Icon(Icons.Outlined.Warning, contentDescription = "warning", tint = PrimaryBlue)
+                        Text(state.message, color = PrimaryBlue, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
                     }
+                }
+                is StudyUiState.EmptyDeck -> {
+                    Column(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(30f))
+                            .background(LightGray)
+                            .padding(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ){
+                        Icon(Icons.Outlined.Info, contentDescription = "info", tint = PrimaryBlue)
+                        Text("Este deck não\ntem cards para estudar.", color = PrimaryBlue, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
+                    }
+                }
+                is StudyUiState.SessionFinished -> {
+                    Column(
+                        modifier = Modifier
+                            .border(
+                                width = 1.dp,
+                                color = LightGray,
+                                shape = RoundedCornerShape(30f)
+                            )
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(text = "🎉", textAlign = TextAlign.Center, fontSize = 28.sp)
+                        Spacer(Modifier.height(8.dp))
+
+                        Text("Parabéns!", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(8.dp))
+
+                        Text("Você finalizou todos os cards de $deckName,\ncontinue estudando!", textAlign = TextAlign.Center)
+                        Spacer(Modifier.height(16.dp))
+
+                        Text("X/X", fontWeight = FontWeight.Bold)
+                        Text("respostas certas")
+                    }
+
+                    Row (
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(30f))
+                            .background(PrimaryBlue)
+                            .padding(13.dp)
+                            .fillMaxWidth()
+                            .height(40.dp)
+                            .clickable(
+                                onClick = { navController.navigate("deck_list") }
+                            ),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = White, modifier = Modifier.size(40.dp))
+
+                        Spacer(Modifier.width(15.dp))
+
+                        Text(text = "Voltar para meus decks", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = White)
+                    }
+                    Spacer(Modifier.height(130.dp))
                 }
                 is StudyUiState.Studying -> {
                     StudyCard(
@@ -72,7 +164,7 @@ fun StudyScreen(
                         onCheckAnswer = { userAnswer, clozeAnswers, multipleChoiceAnswer ->
                             studyViewModel.checkAnswer(userAnswer, clozeAnswers, multipleChoiceAnswer)
                         },
-                        onShowAnswer = { studyViewModel.showAnswer() }, // Passa a nova função
+                        onShowAnswer = { studyViewModel.showAnswer() },
                         onNextCard = { studyViewModel.nextCard() }
                     )
                 }
@@ -97,18 +189,24 @@ private fun StudyCard(
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.Center
     ) {
         Column(
             modifier = Modifier
-                .weight(1f)
+                .border(
+                    width = 1.dp,
+                    color = LightGray,
+                    shape = RoundedCornerShape(30f)
+                )
+                .fillMaxHeight(0.5f)
+                .fillMaxWidth()
+                .padding(8.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.SpaceEvenly
         ) {
             when (cardType) {
                 FlashcardTypeEnum.FRENTE_VERSO.name -> {
-                    // Agora não precisa mais passar os parâmetros de resposta do usuário
                     FrenteVersoStudy(state = state)
                 }
                 FlashcardTypeEnum.MULTIPLA_ESCOLHA.name -> {
@@ -129,22 +227,31 @@ private fun StudyCard(
             }
         }
 
+        Spacer(Modifier.height(80.dp))
+
         Column {
             if (state.isShowingAnswer) {
-                Button(onClick = onNextCard, modifier = Modifier.fillMaxWidth()) {
-                    Text("Continuar")
+                Button(
+                    onClick = onNextCard,
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .height(55.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryBlue
+                    ),
+                    shape = RoundedCornerShape(30f)
+                ) {
+                    Text(text = "Continuar", fontSize = 18.sp)
                 }
             } else {
-                // LÓGICA DO BOTÃO ATUALIZADA
                 val isRevealType = state.card.type == FlashcardTypeEnum.FRENTE_VERSO.name
-                val buttonText = if (isRevealType) "Mostrar Resposta" else "Verificar Resposta"
+                val buttonText = if (isRevealType) "Mostrar resposta" else "Verificar resposta"
 
                 Button(
                     onClick = {
                         if (isRevealType) {
-                            onShowAnswer() // Chama a função simples de mostrar
+                            onShowAnswer()
                         } else {
-                            // Mantém a lógica de verificação para os outros
                             when (cardType) {
                                 FlashcardTypeEnum.MULTIPLA_ESCOLHA.name -> onCheckAnswer("", emptyMap(), selectedOption)
                                 FlashcardTypeEnum.CLOZE.name -> onCheckAnswer("", clozeAnswers, null)
@@ -152,9 +259,15 @@ private fun StudyCard(
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .height(55.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryBlue
+                    ),
+                    shape = RoundedCornerShape(30f)
                 ) {
-                    Text(buttonText)
+                    Text(buttonText, color = White, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -182,11 +295,9 @@ fun FrenteVersoStudy(state: StudyUiState.Studying) {
 
     Text(text = card.frente ?: "", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
 
-    // O CAMPO DE TEXTO FOI REMOVIDO DAQUI
-
     if (state.isShowingAnswer) {
-        Spacer(modifier = Modifier.height(24.dp))
-        Divider(modifier = Modifier.padding(vertical = 16.dp))
+        //Spacer(modifier = Modifier.height(16.dp))
+        Divider(modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(0.9f), thickness = 1.dp, color = LightGray)
         Text(text = "Resposta: ${card.verso}", style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
     }
 }
@@ -213,20 +324,31 @@ fun DigiteRespostaStudy(state: StudyUiState.Studying, userAnswer: String, onUser
     }
 
     Text(text = card.pergunta ?: "", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-    Spacer(modifier = Modifier.height(32.dp))
+    //Spacer(modifier = Modifier.height(32.dp))
     OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth(0.85f)
+            .height(55.dp),
+        enabled = !state.isShowingAnswer,
         value = userAnswer,
         onValueChange = onUserAnswerChange,
-        label = { Text("Digite sua resposta...") },
-        modifier = Modifier.fillMaxWidth(),
-        enabled = !state.isShowingAnswer
+        placeholder = { Text("Digite sua resposta...") },
+        colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = LightGray,
+            unfocusedIndicatorColor = LightGray,
+            cursorColor = PrimaryBlue,
+            errorIndicatorColor = ErrorRed,
+            unfocusedPlaceholderColor = PrimaryBlue,
+            focusedPlaceholderColor = PrimaryBlue
+        ),
+        shape = RoundedCornerShape(30f)
     )
     if (state.isShowingAnswer) {
         val feedbackColor = if (state.wasCorrect == true) Color(0xFF2E7D32) else Color.Red
         val feedbackText = if (state.wasCorrect == true) "Resposta correta!" else "Resposta incorreta!"
-        Spacer(modifier = Modifier.height(24.dp))
+        //Spacer(modifier = Modifier.height(24.dp))
         Text(text = feedbackText, color = feedbackColor, style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(8.dp))
+        //Spacer(modifier = Modifier.height(8.dp))
         Text(text = "Respostas esperadas: ${card.respostasValidas?.joinToString(" ou ")}", style = MaterialTheme.typography.bodyLarge)
     }
 }
@@ -255,7 +377,7 @@ fun MultiplaEscolhaStudy(state: StudyUiState.Studying, selectedOption: Alternati
 
     // Exibe o texto da pergunta
     Text(text = card.pergunta ?: "", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(18.dp))
 
 // Itera sobre as alternativas, ignorando qualquer uma que seja nula
     card.alternativas?.filterNotNull()?.forEach { alternativa ->
@@ -264,16 +386,16 @@ fun MultiplaEscolhaStudy(state: StudyUiState.Studying, selectedOption: Alternati
             state.isShowingAnswer && isCorrect -> ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)) // Verde para a correta
             state.isShowingAnswer && selectedOption == alternativa && !isCorrect -> ButtonDefaults.buttonColors(containerColor = Color.Red) // Vermelho para a incorreta selecionada
             !state.isShowingAnswer && selectedOption == alternativa -> ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary) // Cor para indicar seleção
-            else -> ButtonDefaults.buttonColors() // Cor padrão
+            else -> ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
         }
         Button(
             onClick = { if (!state.isShowingAnswer) onOptionSelected(alternativa) },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            colors = buttonColors
+                .padding(vertical = 4.dp)
+                .fillMaxWidth(0.85f),
+            colors = buttonColors,
+            shape = RoundedCornerShape(30f)
         ) {
-            // Se a alternativa tiver uma imagem, mostra a imagem. Senão, mostra o texto.
             if (alternativa.imageUrl != null) {
                 AsyncImage(
                     model = alternativa.imageUrl,
@@ -281,7 +403,7 @@ fun MultiplaEscolhaStudy(state: StudyUiState.Studying, selectedOption: Alternati
                     modifier = Modifier.height(100.dp)
                 )
             } else {
-                Text(alternativa.text ?: "")
+                Text(alternativa.text ?: "", color = White)
             }
         }
     }
@@ -308,12 +430,23 @@ fun ClozeStudy(
 
         labels.forEach { label ->
             OutlinedTextField(
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .padding(vertical = 8.dp),
+                enabled = !state.isShowingAnswer,
                 value = userAnswers[label] ?: "",
                 onValueChange = { onUserAnswerChange(label, it) },
-                label = { Text("Resposta para ${label.uppercase()}") },
-                modifier = Modifier.padding(vertical = 8.dp),
-                enabled = !state.isShowingAnswer,
-                singleLine = true
+                singleLine = true,
+                placeholder = { Text("Resposta para ${label.uppercase()}") },
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = LightGray,
+                    unfocusedIndicatorColor = LightGray,
+                    cursorColor = PrimaryBlue,
+                    errorIndicatorColor = ErrorRed,
+                    unfocusedPlaceholderColor = PrimaryBlue,
+                    focusedPlaceholderColor = PrimaryBlue
+                ),
+                shape = RoundedCornerShape(30f)
             )
         }
 
@@ -331,7 +464,7 @@ fun ClozeStudy(
                 coloredRegex.findAll(card.textoComLacunas ?: "").forEach { matchResult ->
                     val (key, value) = matchResult.destructured
                     append(card.textoComLacunas?.substring(lastIndex, matchResult.range.first))
-                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Color.Blue)) {
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = PrimaryBlue)) {
                         append(value)
                     }
                     lastIndex = matchResult.range.last + 1
@@ -360,6 +493,6 @@ fun AudioPlayer(url: String) {
     }
 
     IconButton(onClick = { if (!mediaPlayer.isPlaying) mediaPlayer.start() }) {
-        Icon(Icons.Default.PlayArrow, contentDescription = "Tocar Áudio", modifier = Modifier.size(48.dp))
+        Icon(Icons.Default.PlayArrow, contentDescription = "Tocar Áudio", modifier = Modifier.size(48.dp), tint = PrimaryBlue)
     }
 }

@@ -4,6 +4,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -37,6 +40,8 @@ import coil.compose.AsyncImage
 import com.example.estudapp.data.model.AlternativaDTO
 import com.example.estudapp.data.model.FlashcardDTO
 import com.example.estudapp.data.model.FlashcardTypeEnum
+import com.example.estudapp.ui.theme.LightGray
+import com.example.estudapp.ui.theme.PrimaryBlue
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,15 +95,24 @@ fun CreateFlashcardScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(if (isEditMode) "Editar Flashcard" else "Criar Novo Flashcard") })
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(
+                        onClick = { navController.popBackStack() }
+                    ){
+                        Icon(Icons.Outlined.KeyboardArrowLeft, "goBack", tint = PrimaryBlue, modifier = Modifier.size(35.dp))
+                    }
+                },
+                title = { Text("Criar novo card", color = PrimaryBlue, fontWeight = FontWeight.Black) },
+            )
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .padding(top = 20.dp, bottom = 20.dp, start = 30.dp, end = 30.dp)
         ) {
-            // Mesma UI – apenas desabilita troca de abas no modo edição
             TabRow(selectedTabIndex = selectedTab.ordinal) {
                 FlashcardTypeEnum.values().forEach { tabType ->
                     Tab(
