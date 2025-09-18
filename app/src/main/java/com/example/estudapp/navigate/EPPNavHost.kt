@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.example.estudapp.ui.feature.auth.AuthViewModel
 import com.example.estudapp.ui.feature.auth.SignInScreen
 import com.example.estudapp.ui.feature.auth.SignUpScreen
+import com.example.estudapp.ui.feature.chat.ChatScreen
 import com.example.estudapp.ui.feature.flashcard.CreateDeckScreen
 import com.example.estudapp.ui.feature.flashcard.CreateFlashcardScreen
 import com.example.estudapp.ui.feature.flashcard.DeckListScreen
@@ -40,6 +41,9 @@ fun EPPNavHost(
         }
         composable("create_deck") {
             CreateDeckScreen(navController)
+        }
+        composable("chat") {
+            ChatScreen(navController)
         }
 
         composable(

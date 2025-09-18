@@ -279,10 +279,8 @@ class FlashcardRepository {
         return try {
             val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
 
-            // A referência agora é apenas até ao ID do utilizador
             val userChatRef = chatsRef.child(userId)
 
-            // O push() aqui cria o ID único da MENSAGEM diretamente sob o utilizador
             val messageRef = userChatRef.push()
             val messageId = messageRef.key!!
 
@@ -309,7 +307,6 @@ class FlashcardRepository {
             awaitClose(); return@callbackFlow
         }
 
-        // A referência para observar também é apenas o nó do utilizador
         val userChatRef = chatsRef.child(userId)
 
         val listener = object : ValueEventListener {
