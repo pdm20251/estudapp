@@ -85,7 +85,7 @@ fun HomeScreen(
             Spacer(Modifier.height(20.dp))
 
             // Card de Localização Dinâmico
-            currentLocation?.let { locationName ->
+            /*currentLocation?.let { locationName ->
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(30f))
@@ -102,7 +102,7 @@ fun HomeScreen(
                     Image(painter = painterResource(id = R.drawable.icon_map_pin), contentDescription = "Ícone de Localização", modifier = Modifier.size(50.dp))
                 }
                 Spacer(Modifier.height(10.dp))
-            }
+            }*/
 
             Text("Como você vai tirar notas melhores hoje?", color = PrimaryBlue, fontSize = 15.sp, modifier = Modifier
                 .align(Alignment.Start)
