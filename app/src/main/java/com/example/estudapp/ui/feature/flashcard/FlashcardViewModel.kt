@@ -110,6 +110,10 @@ class FlashcardViewModel : ViewModel() {
                 perguntaImageUrl = imageUrl,
                 perguntaAudioUrl = audioUrl
             )
+            if (frente.isBlank() || verso.isBlank()) {
+                _saveStatus.value = SaveStatus.Error("Os campos de pergunta e resposta não podem estar vazios.")
+                return@launch // Sai da função
+            }
             save(deckId, dto)
         }
     }
@@ -132,6 +136,10 @@ class FlashcardViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             _saveStatus.value = SaveStatus.Loading
+            if (pergunta.isBlank() || respostasList.isEmpty()) {
+                _saveStatus.value = SaveStatus.Error("Os campos de pergunta e resposta não podem estar vazios.")
+                return@launch // Sai da função
+            }
             val imageUrl =
                 if (imagemUri != null) repository.uploadFile(imagemUri).getOrNull() else null
             val audioUrl =
@@ -433,7 +441,7 @@ class FlashcardViewModel : ViewModel() {
             }
         }
     }
-    
+
     fun deleteDeck(deckId: String) {
         viewModelScope.launch {
             repository.deleteDeck(deckId)
