@@ -15,6 +15,9 @@ object Routes {
     const val EDIT_FLASHCARD = "edit_flashcard/{deckId}/{cardId}"
     const val STUDY_SESSION = "study_session/{deckId}"
 
+    // Chat
+    const val CHAT = "chat"
+
     // Helpers para construir rotas dinâmicas
     fun flashcardList(deckId: String, deckName: String, deckDesc: String?) = "flashcard_list/$deckId/$deckName/$deckDesc"
     fun createFlashcard(deckId: String) = "create_flashcard/$deckId"
