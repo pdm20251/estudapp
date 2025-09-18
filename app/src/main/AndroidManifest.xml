@@ -19,7 +19,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="API_KEY" /> <!-- Substituir pela API_KEY! -->
+            android:value="AIzaSyD1gqmm882q2HXcXKE1n-FMBjDMU-btmJE" />
 
         <receiver
             android:name=".domain.receiver.GeofenceBroadcastReceiver"
