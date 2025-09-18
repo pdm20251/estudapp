@@ -20,7 +20,6 @@ import android.util.Log
 import com.google.android.gms.tasks.Tasks
 import java.net.HttpURLConnection
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -53,24 +52,7 @@ class FlashcardViewModel : ViewModel() {
             _flashcardsState.value = FlashcardsUiState.Loading
             repository.getFlashcards(deckId).collect { result ->
                 result.onSuccess { flashcards ->
-
-                    //APAGAR LINHAS DEPOIS DOS TESTES
-
-                    //LINHA PARA CHAMAR API NO LOGCAT
-                    //fetchMyDecksFromApi()
-                    // ----------------------------------------
-
-                    //LINHA PARA TESTAR O CHAT
-                    //chatAskHardcoded(deckId=null)
-                    // ----------------------------------------
-
-                    // --- ADICIONE A CHAMADA DE TESTE AQUI ---
                     loadDeckStatistics(deckId)
-                    // ----------------------------------------
-
-                    //FIM
-
-
                     _flashcardsState.value = FlashcardsUiState.Success(flashcards)
                 }.onFailure { error ->
                     _flashcardsState.value =
@@ -310,35 +292,15 @@ class FlashcardViewModel : ViewModel() {
         currentSessionDeckId = null
     }
 
-    fun chatAskHardcoded(deckId: String? = null) {
-        viewModelScope.launch {
-            // cria sessão
-            val sessionRes = repository.createChatSession(deckId)
-            val sessionId = sessionRes.getOrElse {
-                Log.e("ChatVM", "Falha ao criar sessão: ${it.message}", it)
-                return@launch
-            }
-            // envia pergunta
-            val ask = "Explique Past Perfect com 2 exemplos."
-            val msgRes = repository.enqueueChatUserMessage(sessionId, ask)
-            msgRes.onFailure {
-                Log.e("ChatVM", "Falha ao enviar pergunta: ${it.message}", it)
-            }
-            // (opcional) começar a observar mensagens (para quando for ligar na UI):
-            // repository.observeChatMessages(sessionId).collect { /* atualizar estado */ }
-        }
-    }
 
     private fun fetchMyDecksFromApi() {
         viewModelScope.launch(Dispatchers.IO) {
-            // Pega o usuário logado atualmente no Firebase
             val user = FirebaseAuth.getInstance().currentUser
             if (user == null) {
                 Log.e("MyDecksApi", "Usuário não está logado.")
                 return@launch
             }
 
-            // Solicita o token de autenticação do usuário
             user.getIdToken(true).addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val token = task.result?.token
@@ -347,7 +309,6 @@ class FlashcardViewModel : ViewModel() {
                         return@addOnCompleteListener
                     }
 
-                    // Tendo o token, continua a chamada de rede em uma thread de background
                     viewModelScope.launch(Dispatchers.IO) {
                         val url =
                             URL("https://estudapp-api-293741035243.southamerica-east1.run.app/my-decks")
@@ -376,11 +337,6 @@ class FlashcardViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Carrega as estatísticas de todas as sessões de estudo para um deck específico.
-     * Por enquanto, imprime os resultados no Logcat.
-     * No futuro, pode ser adaptada para atualizar um StateFlow na UI.
-     */
     fun loadDeckStatistics(deckId: String) {
         viewModelScope.launch {
             Log.d("DeckStats", "Buscando estatísticas para o deck: $deckId")
@@ -425,14 +381,12 @@ class FlashcardViewModel : ViewModel() {
         flashcardId: String,
         userAnswer: String
     ): Result<ValidationResponse> {
-        // Garante que a função execute em uma thread de IO
         return withContext(Dispatchers.IO) {
             val user = FirebaseAuth.getInstance().currentUser
             if (user == null) {
                 return@withContext Result.failure(Exception("Usuário não está logado."))
             }
 
-            // Obtém o token de autenticação de forma síncrona dentro da coroutine
             val token = try {
                 Tasks.await(user.getIdToken(true)).token
             } catch (e: Exception) {
@@ -448,26 +402,22 @@ class FlashcardViewModel : ViewModel() {
             connection.requestMethod = "POST"
             connection.setRequestProperty("Authorization", "Bearer $token")
             connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-            connection.doOutput = true // Habilita o envio de corpo na requisição
+            connection.doOutput = true
 
             try {
-                // Monta o corpo JSON da requisição
                 val jsonPayload = JSONObject()
                 jsonPayload.put("deckId", deckId)
                 jsonPayload.put("flashcardId", flashcardId)
                 jsonPayload.put("userAnswer", userAnswer)
 
-                // Escreve o JSON no corpo da requisição
                 val outputStreamWriter = OutputStreamWriter(connection.outputStream)
                 outputStreamWriter.write(jsonPayload.toString())
                 outputStreamWriter.flush()
 
-                // Lê a resposta
                 val reader = BufferedReader(InputStreamReader(connection.inputStream))
                 val response = StringBuilder()
                 reader.forEachLine { response.append(it) }
 
-                // Converte a resposta JSON para o nosso objeto ValidationResponse
                 val jsonResponse = JSONObject(response.toString())
                 val isCorrect = jsonResponse.getBoolean("isCorrect")
                 val score = jsonResponse.getDouble("score")
@@ -485,7 +435,6 @@ class FlashcardViewModel : ViewModel() {
     }
 }
 
-// --- Sealed Classes (sem alterações) ---
 sealed class FlashcardsUiState {
     object Loading : FlashcardsUiState()
     data class Success(val flashcards: List<FlashcardDTO>) : FlashcardsUiState()

@@ -1,8 +1,6 @@
 package com.example.estudapp.domain.repository
 
 import android.net.Uri
-import com.example.estudapp.data.model.ChatMessageDTO
-import com.example.estudapp.data.model.ChatSessionDTO
 import com.example.estudapp.data.model.DeckDTO
 import com.example.estudapp.data.model.FlashcardDTO
 import com.google.firebase.auth.FirebaseAuth
@@ -17,6 +15,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import java.util.UUID
 import com.example.estudapp.data.model.DeckPlayStatDTO
 import com.example.estudapp.data.model.ReviewResultDTO
+import com.example.estudapp.data.model.SimpleChatMessageDTO
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
@@ -216,83 +215,7 @@ class FlashcardRepository {
         ref.addValueEventListener(listener)
         awaitClose { ref.removeEventListener(listener)}
     }
-    suspend fun createChatSession(deckId: String? = null): Result<String> {
-        return try {
-            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
-            val sessionRef = chatsRef.child(userId).push()
-            val sessionId = sessionRef.key!!
-            val now = System.currentTimeMillis()
-            val meta = ChatSessionDTO(
-                sessionId = sessionId,
-                userId = userId,
-                deckId = deckId,
-                createdAt = now,
-                updatedAt = now,
-                status = "open"
-            )
-            sessionRef.child("meta").setValue(meta).await()
-            Result.success(sessionId)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 
-    /** Enfileira uma mensagem do usuário: role=user, status=queued */
-    suspend fun enqueueChatUserMessage(sessionId: String, content: String): Result<String> {
-        return try {
-            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
-            val msgRef = chatsRef.child(userId).child(sessionId).child("messages").push()
-            val msg = ChatMessageDTO(
-                id = msgRef.key!!,
-                role = "user",
-                content = content,
-                status = "queued",
-                createdAt = System.currentTimeMillis()
-            )
-            msgRef.setValue(msg).await()
-            // atualiza updatedAt
-            chatsRef.child(userId).child(sessionId).child("meta").child("updatedAt")
-                .setValue(System.currentTimeMillis()).await()
-            Result.success(msg.id!!)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /** Observa as mensagens (app verá a resposta da IA quando o worker gravar role=assistant) */
-    fun observeChatMessages(sessionId: String): Flow<Result<List<ChatMessageDTO>>> = callbackFlow {
-        val userId = getCurrentUserId()
-        if (userId == null) {
-            trySend(Result.failure(Exception("Usuário não autenticado.")))
-            awaitClose(); return@callbackFlow
-        }
-        val ref = chatsRef.child(userId).child(sessionId).child("messages")
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val list = snapshot.children.mapNotNull { it.getValue(ChatMessageDTO::class.java) }
-                    .sortedBy { it.createdAt ?: 0L }
-                trySend(Result.success(list))
-            }
-            override fun onCancelled(error: DatabaseError) {
-                trySend(Result.failure(error.toException()))
-            }
-        }
-        ref.addValueEventListener(listener)
-        awaitClose { ref.removeEventListener(listener) }
-    }
-
-    /** Fecha a sessão (opcional) */
-    suspend fun closeChatSession(sessionId: String): Result<Unit> {
-        return try {
-            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
-            val metaRef = chatsRef.child(userId).child(sessionId).child("meta")
-            metaRef.child("status").setValue("closed").await()
-            metaRef.child("updatedAt").setValue(System.currentTimeMillis()).await()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 
     suspend fun getFlashcardsOnce(deckId: String): Result<List<FlashcardDTO>> {
         return try {
@@ -334,6 +257,63 @@ class FlashcardRepository {
                 }
             })
         }
+    }
+
+    // --- Funções para o CHAT SIMPLIFICADO (Versão Direta, sem Sessão) ---
+
+    /**
+     * Envia uma mensagem diretamente para o nó do utilizador, sem uma camada de sessão.
+     * O ID da mensagem é a chave principal.
+     */
+    suspend fun sendDirectMessage(text: String): Result<String> {
+        return try {
+            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
+
+            // A referência agora é apenas até ao ID do utilizador
+            val userChatRef = chatsRef.child(userId)
+
+            // O push() aqui cria o ID único da MENSAGEM diretamente sob o utilizador
+            val messageRef = userChatRef.push()
+            val messageId = messageRef.key!!
+
+            val message = SimpleChatMessageDTO(
+                id = messageId,
+                sender = "USER",
+                text = text
+            )
+
+            messageRef.setValue(message).await()
+            Result.success(messageId)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Observa todas as mensagens de um utilizador.
+     */
+    fun observeUserMessages(): Flow<Result<List<SimpleChatMessageDTO>>> = callbackFlow {
+        val userId = getCurrentUserId()
+        if (userId == null) {
+            trySend(Result.failure(Exception("Usuário não autenticado.")))
+            awaitClose(); return@callbackFlow
+        }
+
+        // A referência para observar também é apenas o nó do utilizador
+        val userChatRef = chatsRef.child(userId)
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val messages = snapshot.children.mapNotNull { it.getValue(SimpleChatMessageDTO::class.java) }
+                trySend(Result.success(messages))
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                trySend(Result.failure(error.toException()))
+            }
+        }
+        userChatRef.addValueEventListener(listener)
+        awaitClose { userChatRef.removeEventListener(listener) }
     }
 
     //Salvar nome em ''users'' no realtime database

@@ -58,7 +58,6 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // --- BOTÃO PRINCIPAL ---
-            // Este botão agora navega para a lista de decks
             Button(onClick = { navController.navigate("deck_list") }) {
                 Text("Meus Decks")
             }

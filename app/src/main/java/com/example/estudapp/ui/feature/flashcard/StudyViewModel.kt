@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.estudapp.data.model.AlternativaDTO
 import com.example.estudapp.data.model.FlashcardDTO
 import com.example.estudapp.data.model.FlashcardTypeEnum
+import com.example.estudapp.data.model.SimpleChatMessageDTO
 import com.example.estudapp.domain.repository.FlashcardRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,20 +16,56 @@ import kotlinx.coroutines.launch
 class StudyViewModel : ViewModel() {
 
     private val repository = FlashcardRepository()
-
     private val flashcardViewModel = FlashcardViewModel()
+
+    // --- Variáveis de Estado para a Sessão de Estudo ---
     private val _uiState = MutableStateFlow<StudyUiState>(StudyUiState.Loading)
     val uiState: StateFlow<StudyUiState> = _uiState.asStateFlow()
-
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing: StateFlow<Boolean> = _isProcessing.asStateFlow()
     private var allCardsInDeck: List<FlashcardDTO> = emptyList()
     private var currentCardIndex = 0
 
+    // --- Variáveis de Estado e Lógica para o CHAT (Versão Direta, sem Sessão) ---
+    private val _messages = MutableStateFlow<List<SimpleChatMessageDTO>>(emptyList())
+    val messages: StateFlow<List<SimpleChatMessageDTO>> = _messages.asStateFlow()
+
+    init {
+        // Começa a ouvir por mensagens do utilizador assim que o ViewModel é criado
+        observeMessages()
+    }
+
+    /**
+     * Ouve todas as mensagens do utilizador logado.
+     */
+    private fun observeMessages() {
+        viewModelScope.launch {
+            repository.observeUserMessages().collect { result ->
+                result.onSuccess { messageList ->
+                    _messages.value = messageList
+                }.onFailure {
+                    Log.e("Chat", "Erro ao observar mensagens: ${it.message}")
+                }
+            }
+        }
+    }
+
+    /**
+     * Envia uma nova mensagem.
+     */
+    fun sendMessage(text: String) {
+        viewModelScope.launch {
+            repository.sendDirectMessage(text).onFailure {
+                Log.e("Chat", "Erro ao enviar mensagem: ${it.message}")
+            }
+        }
+    }
+
+
+    // --- Funções da Sessão de Estudo ---
     fun startStudySession(deckId: String) {
         viewModelScope.launch {
             _uiState.value = StudyUiState.Loading
-            // --- MUDANÇA PRINCIPAL AQUI ---
             // Usamos a nova função que busca os dados apenas uma vez
             val result = repository.getFlashcardsOnce(deckId)
 
