@@ -91,4 +91,8 @@ dependencies {
     // Biblioteca para carregar imagens (Coil)
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.compose.material:material-icons-extended-android:1.6.8")
+
+    // criar flashcards com ia
+    implementation("com.squareup.okhttp3:okhttp:4.12.0") // Use the latest version    // For logging requests/responses (optional, but helpful for debugging)
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
