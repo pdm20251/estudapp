@@ -1,5 +1,6 @@
 package com.example.estudapp.ui.feature.flashcard
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.estudapp.data.model.AlternativaDTO
@@ -19,6 +20,8 @@ class StudyViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<StudyUiState>(StudyUiState.Loading)
     val uiState: StateFlow<StudyUiState> = _uiState.asStateFlow()
 
+    private val _isProcessing = MutableStateFlow(false)
+    val isProcessing: StateFlow<Boolean> = _isProcessing.asStateFlow()
     private var allCardsInDeck: List<FlashcardDTO> = emptyList()
     private var currentCardIndex = 0
 
@@ -50,75 +53,104 @@ class StudyViewModel : ViewModel() {
         multipleChoiceAnswer: AlternativaDTO? = null
     ) {
         val currentState = _uiState.value
-        if (currentState is StudyUiState.Studying) {
-            val card = currentState.card
-            var isOverallCorrect = false
-            val clozeFeedbackMap = mutableMapOf<String, Boolean>()
+        // Trava a função se já houver uma verificação em andamento
+        if (currentState is StudyUiState.Studying && !_isProcessing.value) {
+            _isProcessing.value = true // Inicia o travamento
 
-            when (card.type) {
-                // O CASO FRENTE_VERSO FOI REMOVIDO DAQUI
-                FlashcardTypeEnum.DIGITE_RESPOSTA.name -> {
-                    isOverallCorrect = card.respostasValidas?.any { it.equals(userAnswer, ignoreCase = true) } == true
-                    flashcardViewModel.addResultDigite(card.id, if (isOverallCorrect) 10.0 else 0.0)
-                }
-                FlashcardTypeEnum.MULTIPLA_ESCOLHA.name -> {
-                    isOverallCorrect = card.respostaCorreta == multipleChoiceAnswer
-                    flashcardViewModel.addResultMultiplaEscolha(card.id, isOverallCorrect)
-                }
-                FlashcardTypeEnum.CLOZE.name -> {
-                    card.respostasCloze?.forEach { (key, correctAnswer) ->
-                        val userClozeAnswer = clozeAnswers[key] ?: ""
-                        clozeFeedbackMap[key] = correctAnswer.equals(userClozeAnswer, ignoreCase = true)
+            viewModelScope.launch {
+                try {
+                    val card = currentState.card
+                    var isOverallCorrect = false
+                    val clozeFeedbackMap = mutableMapOf<String, Boolean>()
+
+                    when (card.type) {
+                        FlashcardTypeEnum.DIGITE_RESPOSTA.name -> {
+                            val validationResult = flashcardViewModel.validateDigiteResposta(
+                                deckId = card.deckId,
+                                flashcardId = card.id,
+                                userAnswer = userAnswer
+                            )
+
+                            validationResult.onSuccess { response ->
+                                isOverallCorrect = response.isCorrect
+                                flashcardViewModel.addResultDigite(card.id, response.score)
+                            }.onFailure {
+                                isOverallCorrect = false
+                                flashcardViewModel.addResultDigite(card.id, 0.0)
+                                Log.e("StudyViewModel", "Falha ao validar resposta: ${it.message}")
+                            }
+                        }
+                        FlashcardTypeEnum.MULTIPLA_ESCOLHA.name -> {
+                            isOverallCorrect = card.respostaCorreta == multipleChoiceAnswer
+                            flashcardViewModel.addResultMultiplaEscolha(card.id, isOverallCorrect)
+                        }
+                        FlashcardTypeEnum.CLOZE.name -> {
+                            card.respostasCloze?.forEach { (key, correctAnswer) ->
+                                val userClozeAnswer = clozeAnswers[key] ?: ""
+                                clozeFeedbackMap[key] = correctAnswer.equals(userClozeAnswer, ignoreCase = true)
+                            }
+                            isOverallCorrect = clozeFeedbackMap.values.all { it }
+                            val correctCount = clozeFeedbackMap.values.count { it }
+                            val totalCount = clozeFeedbackMap.size
+                            flashcardViewModel.addResultCloze(card.id, correctCount, totalCount)
+                        }
+                        // Adicionado para lidar com o tipo FRENTE_VERSO, embora não seja "verificável"
+                        FlashcardTypeEnum.FRENTE_VERSO.name -> {
+                            // Não há nada para verificar, a ação é 'showAnswer'
+                        }
                     }
-                    isOverallCorrect = clozeFeedbackMap.values.all { it }
-                    // --- ADICIONE A CHAMADA AQUI ---
-                    val correctCount = clozeFeedbackMap.values.count { it }
-                    val totalCount = clozeFeedbackMap.size
-                    flashcardViewModel.addResultCloze(card.id, correctCount, totalCount)
+
+                    _uiState.value = currentState.copy(
+                        isShowingAnswer = true,
+                        wasCorrect = isOverallCorrect,
+                        clozeFeedback = if (card.type == FlashcardTypeEnum.CLOZE.name) clozeFeedbackMap else null
+                    )
+                } finally {
+                    _isProcessing.value = false // Libera o travamento no final
                 }
             }
-
-            _uiState.value = currentState.copy(
-                isShowingAnswer = true,
-                wasCorrect = isOverallCorrect,
-                clozeFeedback = if (card.type == FlashcardTypeEnum.CLOZE.name) clozeFeedbackMap else null
-            )
         }
     }
 
-    // NOVA FUNÇÃO ESPECÍFICA PARA MOSTRAR A RESPOSTA
     fun showAnswer() {
+        // Previne a execução se outra ação estiver em andamento
+        if (_isProcessing.value) return
+
         val currentState = _uiState.value
         if (currentState is StudyUiState.Studying) {
-            // Apenas revela a resposta, sem verificar se está correta (wasCorrect = null)
             _uiState.value = currentState.copy(isShowingAnswer = true, wasCorrect = null)
         }
     }
 
     fun nextCard() {
+        // Previne a execução se outra ação estiver em andamento
+        if (_isProcessing.value) return
+        _isProcessing.value = true // Inicia o travamento
+
         val currentState = _uiState.value
         if (currentState is StudyUiState.Studying) {
-            // 1. Processa a revisão para o card que acabamos de ver (incrementa "repeticoes")
             processFlashcardReview(currentState.card, currentState.wasCorrect)
 
-            // 2. Registra o resultado da sessão para o "Frente e Verso"
             if (currentState.card.type == FlashcardTypeEnum.FRENTE_VERSO.name) {
                 flashcardViewModel.addResultFrenteVerso(currentState.card.id)
             }
         }
 
-        // 3. Avança o contador
         currentCardIndex++
 
-        // 4. Verifica se a sessão terminou
         if (currentCardIndex < allCardsInDeck.size) {
-            // Se AINDA HÁ cards, mostra o próximo
-            _uiState.value = StudyUiState.Studying(card = allCardsInDeck[currentCardIndex], isShowingAnswer = false, wasCorrect = null, clozeFeedback = null)
+            _uiState.value = StudyUiState.Studying(
+                card = allCardsInDeck[currentCardIndex],
+                isShowingAnswer = false,
+                wasCorrect = null,
+                clozeFeedback = null
+            )
         } else {
-            // Se NÃO HÁ mais cards, finaliza a sessão
             flashcardViewModel.finishAndSaveDeckSession()
             _uiState.value = StudyUiState.SessionFinished
         }
+
+        _isProcessing.value = false // Libera o travamento
     }
     private fun processFlashcardReview(card: FlashcardDTO, wasCorrect: Boolean?) {
         viewModelScope.launch {

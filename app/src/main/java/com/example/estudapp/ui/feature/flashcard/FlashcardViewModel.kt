@@ -17,13 +17,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.google.android.gms.tasks.Tasks
 import java.net.HttpURLConnection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URL
+import org.json.JSONObject
+import java.io.OutputStreamWriter
 
+data class ValidationResponse(val isCorrect: Boolean, val score: Double)
 class FlashcardViewModel : ViewModel() {
 
     private val repository = FlashcardRepository()
@@ -412,6 +417,69 @@ class FlashcardViewModel : ViewModel() {
                 }.onFailure { error ->
                     Log.e("DeckStats", "Erro ao buscar estatísticas: ${error.message}")
                 }
+            }
+        }
+    }
+    suspend fun validateDigiteResposta(
+        deckId: String,
+        flashcardId: String,
+        userAnswer: String
+    ): Result<ValidationResponse> {
+        // Garante que a função execute em uma thread de IO
+        return withContext(Dispatchers.IO) {
+            val user = FirebaseAuth.getInstance().currentUser
+            if (user == null) {
+                return@withContext Result.failure(Exception("Usuário não está logado."))
+            }
+
+            // Obtém o token de autenticação de forma síncrona dentro da coroutine
+            val token = try {
+                Tasks.await(user.getIdToken(true)).token
+            } catch (e: Exception) {
+                return@withContext Result.failure(Exception("Não foi possível obter o token."))
+            }
+
+            if (token == null) {
+                return@withContext Result.failure(Exception("Token é nulo."))
+            }
+
+            val url = URL("https://estudapp-api-293741035243.southamerica-east1.run.app/flashcards/validate")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Authorization", "Bearer $token")
+            connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+            connection.doOutput = true // Habilita o envio de corpo na requisição
+
+            try {
+                // Monta o corpo JSON da requisição
+                val jsonPayload = JSONObject()
+                jsonPayload.put("deckId", deckId)
+                jsonPayload.put("flashcardId", flashcardId)
+                jsonPayload.put("userAnswer", userAnswer)
+
+                // Escreve o JSON no corpo da requisição
+                val outputStreamWriter = OutputStreamWriter(connection.outputStream)
+                outputStreamWriter.write(jsonPayload.toString())
+                outputStreamWriter.flush()
+
+                // Lê a resposta
+                val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                val response = StringBuilder()
+                reader.forEachLine { response.append(it) }
+
+                // Converte a resposta JSON para o nosso objeto ValidationResponse
+                val jsonResponse = JSONObject(response.toString())
+                val isCorrect = jsonResponse.getBoolean("isCorrect")
+                val score = jsonResponse.getDouble("score")
+
+                Result.success(ValidationResponse(isCorrect, score))
+
+            } catch (e: Exception) {
+                val errorResponse = connection.errorStream?.bufferedReader()?.readText()
+                Log.e("ValidateApi", "Erro na requisição: ${e.message}, Resposta: $errorResponse")
+                Result.failure(e)
+            } finally {
+                connection.disconnect()
             }
         }
     }
