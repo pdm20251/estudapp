@@ -59,7 +59,8 @@ fun ProfileScreen(
     var name by remember {
         mutableStateOf("")
     }
-    //name = authViewModel.auth.currentUser?.displayName ?: ""
+
+    name = authViewModel.user!!.displayName ?: "Erro ao carregar nome"
 
     val authState = authViewModel.authState.observeAsState()
 
@@ -130,7 +131,7 @@ fun ProfileScreen(
             Spacer(Modifier.height(40.dp))
 
             Button(
-                onClick = { /*authViewModel.updateName*/ },
+                onClick = { authViewModel.changeName(name) },
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .height(55.dp),
