@@ -57,11 +57,19 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation("androidx.compose.runtime:runtime-livedata")
 
-    // Firebase (usando a Bill of Materials para gerenciar versões)
+    // --- ADICIONE ESTA LINHA ---
+    // Adiciona o suporte para a função .await() nas tarefas do Firebase/Play Services
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
+    // Firebase
+    // A BoM (Bill of Materials) gerencia as versões de todas as bibliotecas Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.1"))
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.database.ktx)
-
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.material3) // Adicionado corretamente
+    
     // Google Maps, Location & Permissions
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.android.gms:play-services-maps:18.2.0")

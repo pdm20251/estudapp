@@ -136,7 +136,9 @@ fun HomeScreen(
                     .padding(15.dp)
                     .fillMaxWidth(0.92f)
                     .height(100.dp)
-                    .clickable { /* Ação para MonitorIA */ },
+                    .clickable(
+                        onClick = { navController.navigate("chat") }
+                    ),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(Modifier.align(Alignment.Bottom)) {

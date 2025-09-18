@@ -60,15 +60,25 @@ fun ProfileScreen(
     var name by remember {
         mutableStateOf("")
     }
-    //name = authViewModel.auth.currentUser?.displayName ?: ""
 
     val authState = authViewModel.authState.observeAsState()
 
+    LaunchedEffect(authViewModel.user) {
+        if (authViewModel.user == null && authState.value !is AuthState.Unauthenticated) {
+            navController.navigate("login") {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+            }
+        } else if (authViewModel.user != null) {
+            val currentDisplayName = authViewModel.user?.displayName
+            name = currentDisplayName ?: "Erro ao carregar nome"
+        }
+    }
+
     LaunchedEffect(authState.value) {
         if (authState.value is AuthState.Unauthenticated) {
-            // Se o estado mudar para não autenticado, volta para a tela de login
             navController.navigate("login") {
-                // Limpa a pilha de navegação para que o usuário não possa voltar para a home
                 popUpTo(navController.graph.startDestinationId) {
                     inclusive = true
                 }
@@ -125,13 +135,17 @@ fun ProfileScreen(
                     errorIndicatorColor = ErrorRed
                 ),
                 shape = RoundedCornerShape(30f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true
             )
 
             Spacer(Modifier.height(40.dp))
 
             Button(
-                onClick = { /*authViewModel.updateName*/ },
+                onClick = {
+                    authViewModel.changeName(name)
+                    navController.popBackStack()
+                },
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .height(55.dp),
@@ -163,7 +177,7 @@ fun ProfileScreen(
 
             TextButton(
                 onClick = { authViewModel.signout() },
-                ) {
+            ) {
                 Text("Sair", color = PrimaryBlue, fontSize = 15.sp)
             }
         }
