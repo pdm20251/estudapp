@@ -17,6 +17,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["MAPS_API_KEY"] = project.properties["MAPS_API_KEY"] ?: "" // API Key do Google Maps tem de ser adicionada no local.properties
     }
 
     buildTypes {
@@ -54,7 +55,7 @@ dependencies {
 
     // Navegação e LiveData
     implementation(libs.androidx.navigation.compose)
-    implementation("androidx.compose.runtime:runtime-livedata") // Corrigido
+    implementation("androidx.compose.runtime:runtime-livedata")
 
     // --- ADICIONE ESTA LINHA ---
     // Adiciona o suporte para a função .await() nas tarefas do Firebase/Play Services
@@ -68,6 +69,12 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3) // Adicionado corretamente
+
+    // Google Maps, Location & Permissions
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:maps-compose:2.11.4")
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
     // Dependências de Teste
     testImplementation(libs.junit)
