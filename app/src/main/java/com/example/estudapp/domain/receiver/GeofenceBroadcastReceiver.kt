@@ -8,6 +8,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.estudapp.R
+import com.example.estudapp.domain.GeofenceManager // Importe o GeofenceManager
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 
@@ -18,14 +19,11 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val geofencingEvent = GeofencingEvent.fromIntent(intent)
 
-        // --- CORREÇÃO ADICIONADA AQUI ---
-        // 1. Verificamos se o evento é nulo. Se for, não há nada a fazer.
         if (geofencingEvent == null) {
             Log.e(TAG, "GeofencingEvent nulo no BroadcastReceiver.")
             return
         }
 
-        // A partir daqui, o Kotlin sabe que geofencingEvent NÃO é nulo.
         if (geofencingEvent.hasError()) {
             val errorMessage = "Erro no Geofence: ${geofencingEvent.errorCode}"
             Log.e(TAG, errorMessage)
@@ -33,29 +31,25 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         }
 
         val geofenceTransition = geofencingEvent.geofenceTransition
+        val triggeringGeofences = geofencingEvent.triggeringGeofences
+        val geofenceId = triggeringGeofences?.firstOrNull()?.requestId
 
-        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
-            geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
-
-            val triggeringGeofences = geofencingEvent.triggeringGeofences
-
-            val transitionDetails = when (geofenceTransition) {
-                Geofence.GEOFENCE_TRANSITION_ENTER -> "Você entrou em um local de estudo!"
-                Geofence.GEOFENCE_TRANSITION_EXIT -> "Você saiu de um local de estudo."
-                else -> "Evento de geofence desconhecido."
-            }
-
-            Log.i(TAG, transitionDetails)
-
-            val geofenceId = triggeringGeofences?.firstOrNull()?.requestId ?: "Local desconhecido"
-
-            sendNotification(context, geofenceId, transitionDetails)
+        // --- ATUALIZAÇÃO AQUI ---
+        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
+            Log.i(TAG, "Entrou em: $geofenceId")
+            GeofenceManager.updateCurrentLocation(geofenceId) // Atualiza o estado
+            sendNotification(context, geofenceId ?: "Local de Estudo", "Você entrou em um local de estudo!")
+        } else if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
+            Log.i(TAG, "Saiu de: $geofenceId")
+            GeofenceManager.updateCurrentLocation(null) // Limpa o estado
+            sendNotification(context, geofenceId ?: "Local de Estudo", "Você saiu de um local de estudo.")
         } else {
             Log.e(TAG, "Tipo de transição inválido: $geofenceTransition")
         }
     }
 
     private fun sendNotification(context: Context, title: String, content: String) {
+        // (O resto do seu código de notificação permanece o mesmo)
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val channelId = "geofence_channel"
@@ -64,7 +58,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         notificationManager.createNotificationChannel(channel)
 
         val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Use um ícone do seu app
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(content)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

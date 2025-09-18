@@ -3,6 +3,7 @@ package com.example.estudapp.ui.feature.location
 import android.Manifest
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +21,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import java.util.Locale
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -38,15 +40,12 @@ fun MapScreen(
         null
     }
 
-    // --- NOVA LÓGICA DE PERMISSÃO DE NOTIFICAÇÃO ---
-    // 1. Criamos um estado para a permissão de notificação (só no Android 13+)
     val notificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
     } else {
         null
     }
 
-    // 2. Pedimos a permissão de notificação logo no início, se aplicável
     LaunchedEffect(notificationPermission) {
         notificationPermission?.launchPermissionRequest()
     }
@@ -62,7 +61,20 @@ fun MapScreen(
         MapContent(locationViewModel)
 
         backgroundLocationPermission?.let {
-            if (!it.status.isGranted) {
+            if (it.status.isGranted) {
+                // --- CORREÇÃO IMPORTANTE AQUI ---
+                // Agora que temos todas as permissões, observamos a lista de locais.
+                // Assim que a lista for carregada com sucesso, registamos os Geofences.
+                val locationsState by locationViewModel.locationsState.collectAsState()
+                if (locationsState is LocationsUiState.Success) {
+                    // Este LaunchedEffect será executado novamente se a lista de locais mudar (adicionar/deletar),
+                    // mantendo os geofences sempre sincronizados.
+                    LaunchedEffect(locationsState) {
+                        locationViewModel.registerAllGeofences(context)
+                    }
+                }
+            } else {
+                // Se não tiver a permissão de background, pedimos.
                 BackgroundPermissionDialog {
                     it.launchPermissionRequest()
                 }
@@ -84,12 +96,12 @@ fun MapContent(locationViewModel: LocationViewModel) {
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedLocation by remember { mutableStateOf<FavoriteLocationDTO?>(null) }
     var locationName by remember { mutableStateOf("") }
-    val context = LocalContext.current
 
+    val context = LocalContext.current
     val atLimit = locationsState is LocationsUiState.Success &&
             (locationsState as LocationsUiState.Success).locations.size >= 7
 
-    val defaultLocation = LatLng(-18.9186, -48.2772) // Uberlândia
+    val defaultLocation = LatLng(-18.9186, -48.2772)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(lastKnownLocation ?: defaultLocation, 15f)
     }
@@ -142,7 +154,7 @@ fun MapContent(locationViewModel: LocationViewModel) {
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
                         onClick = {
                             selectedLocation = location
-                            true // Evento consumido
+                            true
                         }
                     )
                 }
@@ -176,7 +188,10 @@ fun MapContent(locationViewModel: LocationViewModel) {
                 ) { Text("Salvar") }
             },
             dismissButton = {
-                Button(onClick = { showAddDialog = false }) { Text("Cancelar") }
+                Button(onClick = {
+                    locationName = ""
+                    showAddDialog = false
+                }) { Text("Cancelar") }
             }
         )
     }
@@ -218,10 +233,8 @@ fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
     }
 }
 
-// ADICIONE ESTE NOVO COMPOSABLE AO SEU ARQUIVO
 @Composable
 fun BackgroundPermissionDialog(onPermissionRequest: () -> Unit) {
-    // Usamos um estado interno para que o diálogo só apareça uma vez por visita à tela
     var showDialog by remember { mutableStateOf(true) }
 
     if (showDialog) {

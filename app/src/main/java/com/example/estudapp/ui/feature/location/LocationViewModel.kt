@@ -11,6 +11,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.estudapp.data.model.FavoriteLocationDTO
+import com.example.estudapp.domain.GeofenceManager // <-- CORREÇÃO: Importe o GeofenceManager
 import com.example.estudapp.domain.receiver.GeofenceBroadcastReceiver
 import com.example.estudapp.domain.repository.LocationRepository
 import com.google.android.gms.location.Geofence
@@ -33,6 +34,9 @@ class LocationViewModel : ViewModel() {
     private val _lastKnownLocation = MutableStateFlow<LatLng?>(null)
     val lastKnownLocation: StateFlow<LatLng?> = _lastKnownLocation.asStateFlow()
 
+    // Agora esta linha funcionará corretamente
+    val currentGeofenceLocation: StateFlow<String?> = GeofenceManager.currentLocation
+
     init {
         loadFavoriteLocations()
     }
@@ -42,8 +46,6 @@ class LocationViewModel : ViewModel() {
             repository.getFavoriteLocations().collect { result ->
                 result.onSuccess { locations ->
                     _locationsState.value = LocationsUiState.Success(locations)
-                    // A CADA ATUALIZAÇÃO DA LISTA, RE-REGISTRAMOS OS GEOFENCES
-                    // O CONTEXTO SERÁ PASSADO PELA UI QUANDO NECESSÁRIO
                 }.onFailure { error ->
                     _locationsState.value = LocationsUiState.Error(error.message ?: "Erro ao buscar localizações")
                 }
@@ -51,15 +53,11 @@ class LocationViewModel : ViewModel() {
         }
     }
 
-    // --- LÓGICA DE GEOFENCING ---
-
-    // Cria um PendingIntent que aponta para o nosso BroadcastReceiver
     private fun getGeofencePendingIntent(context: Context): PendingIntent {
         val intent = Intent(context, GeofenceBroadcastReceiver::class.java)
         return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
     }
 
-    // Função principal que cria e registra todos os Geofences
     @SuppressLint("MissingPermission")
     fun registerAllGeofences(context: Context) {
         val geofencingClient = LocationServices.getGeofencingClient(context)
@@ -67,14 +65,13 @@ class LocationViewModel : ViewModel() {
         val currentState = _locationsState.value
         if (currentState !is LocationsUiState.Success || currentState.locations.isEmpty()) {
             Log.d("GeofenceViewModel", "Nenhum local para registrar Geofences.")
-            // Se não houver locais, podemos remover quaisquer geofences antigos
             geofencingClient.removeGeofences(getGeofencePendingIntent(context))
             return
         }
 
         val geofenceList = currentState.locations.map { location ->
             Geofence.Builder()
-                .setRequestId(location.name) // Usamos o nome do local como ID
+                .setRequestId(location.name)
                 .setCircularRegion(location.latitude, location.longitude, location.radius.toFloat())
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
@@ -95,8 +92,6 @@ class LocationViewModel : ViewModel() {
             }
         }
     }
-
-    // --- FUNÇÕES ANTIGAS ---
 
     fun createFavoriteLocation(name: String, latitude: Double, longitude: Double) {
         viewModelScope.launch {

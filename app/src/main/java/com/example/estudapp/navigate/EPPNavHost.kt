@@ -1,6 +1,7 @@
 package com.example.estudapp.navigate
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel // <-- Import viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,7 +16,7 @@ import com.example.estudapp.ui.feature.flashcard.DeckListScreen
 import com.example.estudapp.ui.feature.flashcard.FlashcardListScreen
 import com.example.estudapp.ui.feature.flashcard.StudyScreen
 import com.example.estudapp.ui.feature.home.HomeScreen
-// Importa as novas telas
+import com.example.estudapp.ui.feature.location.LocationViewModel // <-- Import LocationViewModel
 import com.example.estudapp.ui.feature.location.MapScreen
 import com.example.estudapp.ui.feature.profile.ProfileScreen
 
@@ -24,6 +25,10 @@ fun EPPNavHost(
     authViewModel: AuthViewModel
 ) {
     val navController = rememberNavController()
+    // --- CORREÇÃO AQUI ---
+    // Instancie o LocationViewModel aqui para que ele possa ser compartilhado.
+    val locationViewModel: LocationViewModel = viewModel()
+
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
             SignInScreen(navController, authViewModel)
@@ -32,15 +37,13 @@ fun EPPNavHost(
             SignUpScreen(navController, authViewModel)
         }
         composable("home") {
-            HomeScreen(navController, authViewModel)
+            HomeScreen(navController, authViewModel, locationViewModel)
         }
-        // Rota da 'main' para a tela de perfil
         composable("profile") {
             ProfileScreen(navController, authViewModel)
         }
-        // Sua rota da branch 'marcelo' para a tela de mapa
         composable("map") {
-            MapScreen()
+            MapScreen(locationViewModel)
         }
         composable("deck_list") {
             DeckListScreen(navController)
@@ -49,7 +52,6 @@ fun EPPNavHost(
             CreateDeckScreen(navController)
         }
 
-        // A versão mais completa da rota 'flashcard_list' da branch 'main'
         composable(
             route = "flashcard_list/{deckId}/{deckName}/{deckDesc}",
             arguments = listOf(
@@ -70,7 +72,6 @@ fun EPPNavHost(
             }
         }
 
-        // A versão mais completa da rota 'create_flashcard' da branch 'main'
         composable(
             route = "create_flashcard/{deckId}?flashcardId={flashcardId}",
             arguments = listOf(
@@ -92,7 +93,6 @@ fun EPPNavHost(
             }
         }
 
-        // Rota da 'main' para a tela de estudo
         composable(
             route = "study_session/{deckId}",
             arguments = listOf(navArgument("deckId") { type = NavType.StringType })
