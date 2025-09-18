@@ -13,10 +13,8 @@ data class DeckPlayStatDTO(
     var totalQuestions: Int? = 0,     // qtd total (inclui frente/verso)
     var gradedQuestions: Int? = 0,    // qtd que valem nota
 
-    // NOVO
     var latitude: Double? = null,
     var longitude: Double? = null,
 
-    // results[cardId] = ReviewResultDTO
     var results: Map<String, ReviewResultDTO>?=null
 )

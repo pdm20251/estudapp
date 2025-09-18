@@ -77,17 +77,8 @@ fun ProfileScreen(
 
     val authState = authViewModel.authState.observeAsState()
 
-    LaunchedEffect(authViewModel.user) {
-        if (authViewModel.user == null && authState.value !is AuthState.Unauthenticated) {
-            navController.navigate("login") {
-                popUpTo(navController.graph.startDestinationId) {
-                    inclusive = true
-                }
-            }
-        } else if (authViewModel.user != null) {
-            val currentDisplayName = authViewModel.user?.displayName
-            name = currentDisplayName ?: "Erro ao carregar nome"
-        }
+    LaunchedEffect(authViewModel.user?.displayName) {
+            name = authViewModel.user?.displayName ?: "Erro ao carregar nome"
     }
 
     LaunchedEffect(authState.value) {

@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.example.estudapp.ui.feature.location.LocationViewModel
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.Tasks
 import java.net.HttpURLConnection
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +34,8 @@ class FlashcardViewModel : ViewModel() {
 
     private val repository = FlashcardRepository()
 
+    private val locationViewModel = LocationViewModel()
+
     // --- Estados da UI ---
     private val _saveStatus = MutableStateFlow<SaveStatus>(SaveStatus.Idle)
     val saveStatus: StateFlow<SaveStatus> = _saveStatus.asStateFlow()
@@ -45,6 +49,8 @@ class FlashcardViewModel : ViewModel() {
     var currentSession: DeckSessionManager? = null
 
     private var currentSessionDeckId: String? = null
+
+    private val _sessionLocation = MutableStateFlow<LatLng?>(null)
 
     var currentSessionTotalScore: Double? = 0.0
     var currentSessionPossibleScore: Double? = 0.0
@@ -271,6 +277,15 @@ class FlashcardViewModel : ViewModel() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         currentSessionDeckId = deckId
         currentSession = DeckSessionManager(deckId, uid)
+
+//
+//        _sessionLocation.value = locationViewModel.lastKnownLocation.value
+//        val lat = _sessionLocation.value?.latitude
+//        val lng = _sessionLocation.value?.longitude
+//
+//        if(lat != null && lng != null) {
+//            currentSession!!.setLocation(lat, lng)
+//        }
     }
 
     fun addResultFrenteVerso(cardId: String) {

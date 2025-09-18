@@ -167,19 +167,19 @@ fun CreateFlashcardScreen(
                 } else {
                     when (selectedTab) {
                         FlashcardTypeEnum.FRENTE_VERSO -> FormFrenteVerso(
-                            deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
+                            navController, deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
                         )
 
                         FlashcardTypeEnum.CLOZE -> FormCloze(
-                            deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
+                            navController, deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
                         )
 
                         FlashcardTypeEnum.DIGITE_RESPOSTA -> FormDigiteResposta(
-                            deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
+                            navController, deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
                         )
 
                         FlashcardTypeEnum.MULTIPLA_ESCOLHA -> FormMultiplaEscolha(
-                            deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
+                            navController, deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
                         )
                     }
                 }
@@ -192,6 +192,7 @@ fun CreateFlashcardScreen(
 
 @Composable
 private fun FormFrenteVerso(
+    navController: NavHostController,
     deckId: String,
     viewModel: FlashcardViewModel,
     saveStatus: SaveStatus,
@@ -269,13 +270,15 @@ private fun FormFrenteVerso(
     Spacer(Modifier.height(16.dp))
 
     GenerateCardButton(
-
+        navController,
+        deckId
     )
 
 }
 
 @Composable
 private fun FormCloze(
+    navController: NavHostController,
     deckId: String,
     viewModel: FlashcardViewModel,
     saveStatus: SaveStatus,
@@ -323,12 +326,14 @@ private fun FormCloze(
     Spacer(Modifier.height(16.dp))
 
     GenerateCardButton(
-        /* Inserir aqui lógica para gerar card com LLM. */
+        navController,
+        deckId
     )
 }
 
 @Composable
 private fun FormDigiteResposta(
+    navController: NavHostController,
     deckId: String,
     viewModel: FlashcardViewModel,
     saveStatus: SaveStatus,
@@ -475,13 +480,15 @@ private fun FormDigiteResposta(
         Spacer(Modifier.height(16.dp))
 
         GenerateCardButton(
-            /* Inserir aqui lógica para gerar card com LLM. */
+            navController,
+            deckId
         )
     }
 }
 
 @Composable
 private fun FormMultiplaEscolha(
+    navController: NavHostController,
     deckId: String,
     viewModel: FlashcardViewModel,
     saveStatus: SaveStatus,
@@ -674,7 +681,6 @@ private fun FormMultiplaEscolha(
             isLoading = saveStatus is SaveStatus.Loading
         ) {
             if (isEditMode && cardToEdit != null) {
-                // Mantém as imageUrl atuais das alternativas (se existirem)
                 val altsExistentes = cardToEdit.alternativas ?: emptyList()
                 val alternativasAtualizadas = listOf(
                     AlternativaDTO(
@@ -703,7 +709,6 @@ private fun FormMultiplaEscolha(
                     respostaCorretaIndex = respostaCorretaIndex
                 )
             } else {
-                // Criação: o seu ViewModel quer pares (texto, Uri?)
                 val alternativasUris: List<Pair<String, Uri?>> = listOf(
                     alt1Texto to alt1Uri,
                     alt2Texto to alt2Uri,
@@ -722,7 +727,8 @@ private fun FormMultiplaEscolha(
         }
         Spacer(modifier = Modifier.height(16.dp))
         GenerateCardButton(
-            /* Inserir aqui lógica para gerar card com LLM. */
+            navController,
+            deckId
         )
     }
 }
@@ -802,9 +808,12 @@ private fun SaveButton(
 
 
 @Composable
-private fun GenerateCardButton(){
+private fun GenerateCardButton(
+    navController: NavHostController,
+    deckId: String
+){
     Button(
-        onClick = { },
+        onClick = { navController.navigate("generate_flashcard/${deckId}?flashcardId=") },
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp),

@@ -1,5 +1,6 @@
 package com.example.estudapp.ui.feature.flashcard
 
+import android.Manifest
 import android.hardware.lights.Light
 import android.media.MediaPlayer
 import androidx.compose.foundation.background
@@ -25,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -39,26 +41,34 @@ import coil.compose.AsyncImage
 import com.example.estudapp.data.model.AlternativaDTO
 import com.example.estudapp.data.model.FlashcardDTO
 import com.example.estudapp.data.model.FlashcardTypeEnum
+import com.example.estudapp.ui.feature.location.LocationViewModel
 import com.example.estudapp.ui.theme.ErrorRed
 import com.example.estudapp.ui.theme.LightGray
 import com.example.estudapp.ui.theme.PrimaryBlue
 import com.example.estudapp.ui.theme.White
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import java.util.Locale
 import kotlin.text.set
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun StudyScreen(
     navController: NavHostController,
     studyViewModel: StudyViewModel = viewModel(),
+    locationViewModel: LocationViewModel = viewModel(),
     deckId: String,
     deckName: String
 ) {
     val scoreValues by studyViewModel.scoreValues.collectAsState()
 
+    val context = LocalContext.current
 
     LaunchedEffect(deckId) {
-        studyViewModel.startStudySession(deckId)
+        locationViewModel.getCurrentLocation(context)
+        val latlng = locationViewModel.lastKnownLocation.value
+        studyViewModel.startStudySession(deckId, latlng)
     }
 
 //    LaunchedEffect(studyViewModel.currentSessionTotalScore) {
