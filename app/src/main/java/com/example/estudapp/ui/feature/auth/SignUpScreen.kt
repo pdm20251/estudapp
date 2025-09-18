@@ -98,7 +98,8 @@ fun SignUpScreen(
         Column (
             modifier = Modifier
                 .fillMaxSize()
-                .consumeWindowInsets(paddingValues),
+                .consumeWindowInsets(paddingValues)
+                .padding(top = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ){
@@ -115,7 +116,7 @@ fun SignUpScreen(
             Spacer(Modifier.height(30.dp))
 
             Text(text = "Estuda++", fontSize = 50.sp, color = PrimaryBlue, fontWeight = FontWeight.Black)
-            Spacer(Modifier.height(50.dp))
+            Spacer(Modifier.height(30.dp))
 
             Text(
                 text = "Nome", color = PrimaryBlue,
@@ -143,7 +144,7 @@ fun SignUpScreen(
                 singleLine = true
             )
 
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(10.dp))
 
             Text(
                 text = "E-mail", color = PrimaryBlue,
@@ -172,7 +173,7 @@ fun SignUpScreen(
                 singleLine = true
             )
 
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(10.dp))
 
             Text(
                 text = "Senha", color = PrimaryBlue,
@@ -213,7 +214,7 @@ fun SignUpScreen(
                 }
             )
 
-            Spacer(Modifier.height(70.dp))
+            Spacer(Modifier.height(30.dp))
 
             Button(
                 onClick = { authViewModel.signup(name, email, password)},
@@ -229,7 +230,7 @@ fun SignUpScreen(
                 Text(text = "Registrar-se", fontSize = 18.sp)
             }
 
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(10.dp))
 
             TextButton(
                 onClick = {},
