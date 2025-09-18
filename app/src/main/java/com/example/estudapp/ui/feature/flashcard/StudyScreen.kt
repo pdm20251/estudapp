@@ -66,8 +66,7 @@ fun StudyScreen(
     val context = LocalContext.current
 
     LaunchedEffect(deckId) {
-        locationViewModel.getCurrentLocation(context)
-        val latlng = locationViewModel.lastKnownLocation.value
+        val latlng = locationViewModel.fetchCurrentLocationAnonymously(context)
         studyViewModel.startStudySession(deckId, latlng)
     }
 
