@@ -49,6 +49,7 @@ import com.example.estudapp.ui.feature.auth.AuthState
 import com.example.estudapp.ui.feature.auth.AuthViewModel
 import com.example.estudapp.ui.theme.ErrorRed
 import com.example.estudapp.ui.theme.PrimaryBlue
+import com.example.estudapp.navigate.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -155,6 +156,21 @@ fun ProfileScreen(
                 enabled = (name.length >= 3)
             ) {
                 Text(text = "Mudar nome", fontSize = 18.sp)
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Button(
+                // --- CORREÇÃO AQUI: Usando o texto da rota ---
+                onClick = { navController.navigate("map") },
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .height(55.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryBlue
+                ),
+                shape = RoundedCornerShape(30f),
+            ) {
+                Text(text = "Meus Locais de Estudo", fontSize = 18.sp)
             }
 
             Spacer(Modifier.height(40.dp))

@@ -18,7 +18,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.estudapp.navigate.EPPNavHost
 import com.example.estudapp.ui.feature.auth.AuthViewModel
 import com.example.estudapp.ui.theme.EstudaTheme
-import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

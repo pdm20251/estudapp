@@ -1,6 +1,7 @@
 package com.example.estudapp.navigate
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel // <-- Import viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,6 +17,8 @@ import com.example.estudapp.ui.feature.flashcard.DeckListScreen
 import com.example.estudapp.ui.feature.flashcard.FlashcardListScreen
 import com.example.estudapp.ui.feature.flashcard.StudyScreen
 import com.example.estudapp.ui.feature.home.HomeScreen
+import com.example.estudapp.ui.feature.location.LocationViewModel // <-- Import LocationViewModel
+import com.example.estudapp.ui.feature.location.MapScreen
 import com.example.estudapp.ui.feature.profile.ProfileScreen
 
 @Composable
@@ -23,6 +26,10 @@ fun EPPNavHost(
     authViewModel: AuthViewModel
 ) {
     val navController = rememberNavController()
+    // --- CORREÇÃO AQUI ---
+    // Instancie o LocationViewModel aqui para que ele possa ser compartilhado.
+    val locationViewModel: LocationViewModel = viewModel()
+
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
             SignInScreen(navController, authViewModel)
@@ -31,10 +38,13 @@ fun EPPNavHost(
             SignUpScreen(navController, authViewModel)
         }
         composable("home") {
-            HomeScreen(navController, authViewModel)
+            HomeScreen(navController, authViewModel, locationViewModel)
         }
         composable("profile") {
             ProfileScreen(navController, authViewModel)
+        }
+        composable("map") {
+            MapScreen(navController, locationViewModel)
         }
         composable("deck_list") {
             DeckListScreen(navController)
