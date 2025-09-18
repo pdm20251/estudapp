@@ -56,6 +56,10 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation("androidx.compose.runtime:runtime-livedata") // Corrigido
 
+    // --- ADICIONE ESTA LINHA ---
+    // Adiciona o suporte para a função .await() nas tarefas do Firebase/Play Services
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
     // Firebase
     // A BoM (Bill of Materials) gerencia as versões de todas as bibliotecas Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.1"))

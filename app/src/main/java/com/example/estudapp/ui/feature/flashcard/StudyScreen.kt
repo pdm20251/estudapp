@@ -379,8 +379,8 @@ fun MultiplaEscolhaStudy(state: StudyUiState.Studying, selectedOption: Alternati
     Text(text = card.pergunta ?: "", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
     Spacer(modifier = Modifier.height(18.dp))
 
-    // Itera sobre as alternativas para criar os botões
-    card.alternativas?.forEach { alternativa ->
+// Itera sobre as alternativas, ignorando qualquer uma que seja nula
+    card.alternativas?.filterNotNull()?.forEach { alternativa ->
         val isCorrect = alternativa == card.respostaCorreta
         val buttonColors = when {
             state.isShowingAnswer && isCorrect -> ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)) // Verde para a correta
