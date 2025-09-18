@@ -20,7 +20,6 @@ class DeckSessionManager(
     private var totalQuestions = 0
     private var gradedQuestions = 0
 
-    // NOVO: localização opcional
     private var latitude: Double? = null
     private var longitude: Double? = null
 

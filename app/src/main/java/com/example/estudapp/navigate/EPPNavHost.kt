@@ -16,9 +16,11 @@ import com.example.estudapp.ui.feature.flashcard.CreateFlashcardScreen
 import com.example.estudapp.ui.feature.flashcard.DeckListScreen
 import com.example.estudapp.ui.feature.flashcard.FlashcardListScreen
 import com.example.estudapp.ui.feature.flashcard.StudyScreen
+import com.example.estudapp.ui.feature.flashcard.aigenerate.AIGenerateScreen
 import com.example.estudapp.ui.feature.home.HomeScreen
 import com.example.estudapp.ui.feature.location.LocationViewModel // <-- Import LocationViewModel
 import com.example.estudapp.ui.feature.location.MapScreen
+import com.example.estudapp.ui.feature.profile.ChangeNameScreen
 import com.example.estudapp.ui.feature.profile.ProfileScreen
 
 @Composable
@@ -42,6 +44,9 @@ fun EPPNavHost(
         }
         composable("profile") {
             ProfileScreen(navController, authViewModel)
+        }
+        composable("name") {
+            ChangeNameScreen(navController, authViewModel)
         }
         composable("map") {
             MapScreen(navController, locationViewModel)
@@ -90,6 +95,27 @@ fun EPPNavHost(
             val flashcardId = backStackEntry.arguments?.getString("flashcardId")
             if (deckId != null) {
                 CreateFlashcardScreen(
+                    navController = navController,
+                    deckId = deckId,
+                    flashcardId = flashcardId
+                )
+            }
+        }
+
+        composable(
+            route = "generate_flashcard/{deckId}?flashcardId={flashcardId}",
+            arguments = listOf(
+                navArgument("deckId") { type = NavType.StringType },
+                navArgument("flashcardId") {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) { backStackEntry ->
+            val deckId = backStackEntry.arguments?.getString("deckId")
+            val flashcardId = backStackEntry.arguments?.getString("flashcardId")
+            if (deckId != null) {
+                AIGenerateScreen(
                     navController = navController,
                     deckId = deckId,
                     flashcardId = flashcardId

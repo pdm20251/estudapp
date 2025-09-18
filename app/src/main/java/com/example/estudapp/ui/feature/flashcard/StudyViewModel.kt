@@ -8,6 +8,8 @@ import com.example.estudapp.data.model.FlashcardDTO
 import com.example.estudapp.data.model.FlashcardTypeEnum
 import com.example.estudapp.data.model.SimpleChatMessageDTO
 import com.example.estudapp.domain.repository.FlashcardRepository
+import com.example.estudapp.ui.feature.location.LocationViewModel
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,8 +32,7 @@ class StudyViewModel : ViewModel() {
     private val _messages = MutableStateFlow<List<SimpleChatMessageDTO>>(emptyList())
     val messages: StateFlow<List<SimpleChatMessageDTO>> = _messages.asStateFlow()
 
-    var currentSessionTotalScore: Double? = 0.0
-    var currentSessionPossibleScore: Double? = 0.0
+
 
     private val _scoreValues = MutableStateFlow<List<Double>>(listOf(0.0, 0.0))
     val scoreValues: StateFlow<List<Double>> = _scoreValues.asStateFlow()
@@ -70,10 +71,9 @@ class StudyViewModel : ViewModel() {
 
 
     // --- Funções da Sessão de Estudo ---
-    fun startStudySession(deckId: String) {
+    fun startStudySession(deckId: String, latLng: LatLng?) {
         viewModelScope.launch {
             _uiState.value = StudyUiState.Loading
-            // Usamos a nova função que busca os dados apenas uma vez
             val result = repository.getFlashcardsOnce(deckId)
 
             result.onSuccess { flashcards ->
@@ -81,6 +81,14 @@ class StudyViewModel : ViewModel() {
                 currentCardIndex = 0
                 if (allCardsInDeck.isNotEmpty()) {
                     flashcardViewModel.startDeckSession(deckId)
+
+                    val lat = latLng?.latitude
+                    val lng = latLng?.longitude
+
+                    if(lat != null && lng != null) {
+                        flashcardViewModel.currentSession?.setLocation(lat, lng)
+                    }
+
                     _uiState.value = StudyUiState.Studying(card = allCardsInDeck[currentCardIndex], isShowingAnswer = false)
                 } else {
                     _uiState.value = StudyUiState.EmptyDeck

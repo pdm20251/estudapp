@@ -59,26 +59,31 @@ import com.example.estudapp.ui.feature.auth.AuthViewModel
 import com.example.estudapp.ui.theme.ErrorRed
 import com.example.estudapp.ui.theme.PrimaryBlue
 import com.example.estudapp.navigate.Routes
-import com.example.estudapp.ui.theme.Black
 import com.example.estudapp.ui.theme.LightGray
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(
+fun ChangeNameScreen(
     navController: NavHostController,
-    authViewModel: AuthViewModel,
-    statsViewModel: StatsViewModel = viewModel()
+    authViewModel: AuthViewModel
 ) {
     var name by remember {
         mutableStateOf("")
     }
 
-    var expanded by remember { mutableStateOf(false) }
-
     val authState = authViewModel.authState.observeAsState()
 
-    LaunchedEffect(authViewModel.user?.displayName) {
-            name = authViewModel.user?.displayName ?: "Erro ao carregar nome"
+    LaunchedEffect(authViewModel.user) {
+        if (authViewModel.user == null && authState.value !is AuthState.Unauthenticated) {
+            navController.navigate("login") {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+            }
+        } else if (authViewModel.user != null) {
+            val currentDisplayName = authViewModel.user?.displayName
+            name = currentDisplayName ?: "Erro ao carregar nome"
+        }
     }
 
     LaunchedEffect(authState.value) {
@@ -101,26 +106,7 @@ fun ProfileScreen(
                         Icon(Icons.Outlined.KeyboardArrowLeft, "goBack", tint = PrimaryBlue, modifier = Modifier.size(35.dp))
                     }
                 },
-                title = { Text("Perfil", color = PrimaryBlue, fontWeight = FontWeight.Black) },
-                actions = {
-                    IconButton(onClick = { expanded = !expanded }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = Black)
-                    }
-
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Mudar nome", color = Black) },
-                            onClick = { navController.navigate("name") }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Sair", color = Black) },
-                            onClick = { authViewModel.signout() }
-                        )
-                    }
-                }
+                title = { Text("Mudar nome", color = PrimaryBlue, fontWeight = FontWeight.Black) }
             )
         }
     ) { paddingValues ->
@@ -152,28 +138,42 @@ fun ProfileScreen(
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(100.dp))
 
             Text(
-                text = name, color = PrimaryBlue,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(Modifier.height(40.dp))
-
-            Divider(
-                color = LightGray,
-                thickness = 1.dp,
+                text = "Nome", color = PrimaryBlue,
+                fontSize = 18.sp,
+                textAlign = TextAlign.Start,
                 modifier = Modifier
-                    //.padding(vertical = 8.dp)
+                    .align(Alignment.Start)
+            )
+            Spacer(Modifier.height(7.dp))
+
+            OutlinedTextField(
+                modifier = Modifier
                     .fillMaxWidth()
+                    .height(55.dp),
+                value = name,
+                onValueChange = { name = it },
+                placeholder = { Text("Seu nome") },
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = PrimaryBlue,
+                    unfocusedIndicatorColor = PrimaryBlue,
+                    cursorColor = PrimaryBlue,
+                    errorIndicatorColor = ErrorRed
+                ),
+                shape = RoundedCornerShape(30f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                singleLine = true
             )
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(20.dp))
 
             Button(
-                onClick = { navController.navigate("map") },
+                onClick = {
+                    authViewModel.changeName(name)
+                    navController.popBackStack()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(55.dp),
@@ -181,18 +181,10 @@ fun ProfileScreen(
                     containerColor = PrimaryBlue
                 ),
                 shape = RoundedCornerShape(30f),
+                enabled = (name.length >= 3)
             ) {
-                Text(text = "Meus Locais de Estudo", fontSize = 18.sp)
+                Text(text = "Mudar nome", fontSize = 18.sp)
             }
-
-            Spacer(Modifier.height(40.dp))
-
-            StatsComponent(
-                modifier = Modifier.fillMaxWidth(),
-                statsViewModel = statsViewModel
-            )
-
-            Spacer(Modifier.height(40.dp))
         }
     }
 }

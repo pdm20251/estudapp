@@ -119,6 +119,24 @@ class LocationViewModel : ViewModel() {
             }
         }
     }
+
+    @SuppressLint("MissingPermission")
+    suspend fun fetchCurrentLocationAnonymously(context: Context): LatLng? {
+        try {
+            val location = LocationServices.getFusedLocationProviderClient(context)
+                .lastLocation
+                .await()
+            location?.let {
+                val latLng = LatLng(it.latitude, it.longitude)
+                _lastKnownLocation.value = latLng
+                return latLng
+            }
+
+            return null
+        } catch (e: Exception) {
+            return null
+        }
+    }
 }
 
 sealed class LocationsUiState {
