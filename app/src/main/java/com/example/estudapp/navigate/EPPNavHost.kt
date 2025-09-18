@@ -84,12 +84,17 @@ fun EPPNavHost(
         }
 
         composable(
-            route = "study_session/{deckId}",
-            arguments = listOf(navArgument("deckId") { type = NavType.StringType })
+            route = "study_session/{deckId}/{deckName}",
+            arguments = listOf(
+                navArgument("deckId") { type = NavType.StringType },
+                navArgument("deckName") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val deckId = backStackEntry.arguments?.getString("deckId")
-            if (deckId != null) {
-                StudyScreen(navController = navController, deckId = deckId)
+            val deckName = backStackEntry.arguments?.getString("deckName")
+
+            if (deckId != null && deckName != null) {
+                StudyScreen(navController = navController, deckId = deckId, deckName = deckName)
             }
         }
     }

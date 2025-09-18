@@ -27,8 +27,6 @@ data class FlashcardDTO(
 
 
     // Campos para o Algoritmo de Repetição Espaçada
-    var proximaRevisaoTimestamp: Long = System.currentTimeMillis(),
-    var fatorFacilidade: Float = 2.5f,
     var repeticoes: Int = 0,
     var intervaloEmDias: Int = 1,
 
@@ -50,8 +48,6 @@ data class FlashcardDTO(
         respostasValidas = null,
         alternativas = null,
         respostaCorreta = null,
-        proximaRevisaoTimestamp = System.currentTimeMillis(),
-        fatorFacilidade = 2.5f,
         repeticoes = 0,
         intervaloEmDias = 1,
 

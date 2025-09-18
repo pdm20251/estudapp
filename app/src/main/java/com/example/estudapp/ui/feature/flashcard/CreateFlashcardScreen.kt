@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import com.example.estudapp.R
 import androidx.compose.foundation.rememberScrollState
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -54,6 +56,8 @@ import coil.compose.AsyncImage
 import com.example.estudapp.data.model.AlternativaDTO
 import com.example.estudapp.data.model.FlashcardDTO
 import com.example.estudapp.data.model.FlashcardTypeEnum
+import com.example.estudapp.ui.theme.LightGray
+import com.example.estudapp.ui.theme.PrimaryBlue
 import java.util.Locale
 
 
@@ -98,27 +102,34 @@ fun CreateFlashcardScreen(
                 flashcardViewModel.resetSaveStatus()
                 navController.popBackStack()
             }
-
             is SaveStatus.Error -> {
                 Toast.makeText(context, status.message, Toast.LENGTH_SHORT).show()
                 flashcardViewModel.resetSaveStatus()
             }
-
             else -> {}
         }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(if (isEditMode) "Editar Flashcard" else "Criar Novo Flashcard") })
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(
+                        onClick = { navController.popBackStack() }
+                    ){
+                        Icon(Icons.Outlined.KeyboardArrowLeft, "goBack", tint = PrimaryBlue, modifier = Modifier.size(35.dp))
+                    }
+                },
+                title = { Text("Criar novo card", color = PrimaryBlue, fontWeight = FontWeight.Black) },
+            )
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .padding(top = 20.dp, bottom = 20.dp, start = 30.dp, end = 30.dp)
         ) {
-            // Mesma UI – apenas desabilita troca de abas no modo edição
             TabRow(selectedTabIndex = selectedTab.ordinal) {
                 FlashcardTypeEnum.values().forEach { tabType ->
                     Tab(
@@ -141,6 +152,7 @@ fun CreateFlashcardScreen(
                     .fillMaxSize()
                     .padding(16.dp)
                     .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (isEditMode && cardToEdit == null) {
                     CircularProgressIndicator()
@@ -398,7 +410,6 @@ private fun FormDigiteResposta(
         }
     }
 
-
     Spacer(Modifier.height(16.dp))
 
     Text(
@@ -507,7 +518,6 @@ private fun FormMultiplaEscolha(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
     )
-
     MediaSelector(
         imageUri = perguntaImagemUri,
         audioUri = perguntaAudioUri,
@@ -782,5 +792,3 @@ private fun GenerateCardButton(){
 
 /* Extensãozinha para evitar null/blank repetido */
 private fun String?.orElseEmpty(): String = this ?: ""
-
-
