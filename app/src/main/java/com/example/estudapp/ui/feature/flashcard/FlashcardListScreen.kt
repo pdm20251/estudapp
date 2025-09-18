@@ -37,6 +37,11 @@ import com.example.estudapp.ui.theme.LightGray
 import com.example.estudapp.ui.theme.PrimaryBlue
 import com.example.estudapp.ui.theme.White
 import java.util.Locale
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.ui.platform.LocalContext
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +57,7 @@ fun FlashcardListScreen(
     }
 
     val uiState by flashcardViewModel.flashcardsState.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -64,6 +70,28 @@ fun FlashcardListScreen(
                     }
                 },
                 title = { Text("Meus decks", color = PrimaryBlue, fontWeight = FontWeight.Black) },
+                actions = {
+                    IconButton(onClick = {
+                        val userId = FirebaseAuth.getInstance().currentUser?.uid
+                        if (userId != null) {
+                            val shareUrl = "https://estudapp-api-293741035243.southamerica-east1.run.app/share-deck/$userId/$deckId"
+
+                            val sendIntent: Intent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, "Estude meu deck de '$deckName' no Estuda++! $shareUrl")
+                                type = "text/plain"
+                            }
+
+                            val shareIntent = Intent.createChooser(sendIntent, "Compartilhar Deck")
+                            context.startActivity(shareIntent)
+                        } else {
+                            Toast.makeText(context, "Erro: Não foi possível identificar o usuário.", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Icon(Icons.Default.Share, contentDescription = "Compartilhar Deck", tint = PrimaryBlue)
+                    }
+                }
+
             )
         }
     ) { paddingValues ->
