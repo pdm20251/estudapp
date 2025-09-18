@@ -107,7 +107,7 @@ fun FlashcardListScreen(
                             .fillMaxWidth()
                             .height(60.dp)
                             .clickable(
-                                onClick = { navController.navigate("study_session/${deckId}") },
+                                onClick = { navController.navigate("study_session/${deckId}/${deckName}") },
                                 enabled = !state.flashcards.isEmpty()
                             ),
                         horizontalArrangement = Arrangement.Start,

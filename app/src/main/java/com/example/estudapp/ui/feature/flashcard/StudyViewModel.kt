@@ -52,7 +52,6 @@ class StudyViewModel : ViewModel() {
             val clozeFeedbackMap = mutableMapOf<String, Boolean>()
 
             when (card.type) {
-                // O CASO FRENTE_VERSO FOI REMOVIDO DAQUI
                 FlashcardTypeEnum.DIGITE_RESPOSTA.name -> {
                     isOverallCorrect = card.respostasValidas?.any { it.equals(userAnswer, ignoreCase = true) } == true
                 }
@@ -76,11 +75,9 @@ class StudyViewModel : ViewModel() {
         }
     }
 
-    // NOVA FUNÇÃO ESPECÍFICA PARA MOSTRAR A RESPOSTA
     fun showAnswer() {
         val currentState = _uiState.value
         if (currentState is StudyUiState.Studying) {
-            // Apenas revela a resposta, sem verificar se está correta (wasCorrect = null)
             _uiState.value = currentState.copy(isShowingAnswer = true, wasCorrect = null)
         }
     }
