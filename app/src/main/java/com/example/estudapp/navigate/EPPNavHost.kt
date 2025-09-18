@@ -19,6 +19,7 @@ import com.example.estudapp.ui.feature.flashcard.StudyScreen
 import com.example.estudapp.ui.feature.home.HomeScreen
 import com.example.estudapp.ui.feature.location.LocationViewModel // <-- Import LocationViewModel
 import com.example.estudapp.ui.feature.location.MapScreen
+import com.example.estudapp.ui.feature.profile.ChangeNameScreen
 import com.example.estudapp.ui.feature.profile.ProfileScreen
 
 @Composable
@@ -42,6 +43,9 @@ fun EPPNavHost(
         }
         composable("profile") {
             ProfileScreen(navController, authViewModel)
+        }
+        composable("name") {
+            ChangeNameScreen(navController, authViewModel)
         }
         composable("map") {
             MapScreen(navController, locationViewModel)
