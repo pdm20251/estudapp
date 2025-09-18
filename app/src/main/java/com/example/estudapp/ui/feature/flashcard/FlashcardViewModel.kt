@@ -312,13 +312,26 @@ class FlashcardViewModel : ViewModel() {
     fun finishAndSaveDeckSession() {
         val session = currentSession?.build() ?: return
         viewModelScope.launch {
-            repository.saveDeckSessionStat(session)
+            try {
+                repository.saveDeckSessionStat(session)
+
+                currentSessionDeckId?.let { deckId ->
+                    repository.calculateNextReview(deckId).onFailure { error ->
+                        Log.e("FlashcardViewModel", "Erro ao calcular próxima revisão: ${error.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("FlashcardViewModel", "Erro ao finalizar sessão: ${e.message}")
+            } finally {
+                // Atualiza os valores de score e limpa a sessão
+                currentSessionTotalScore = currentSession!!.getTotalScore()
+                currentSessionPossibleScore = currentSession!!.getPossibleScore()
+                currentSession = null
+                currentSessionDeckId = null
+            }
         }
-        currentSessionTotalScore = currentSession!!.getTotalScore()
-        currentSessionPossibleScore = currentSession!!.getPossibleScore()
-        currentSession = null
-        currentSessionDeckId = null
     }
+
 
 
     private fun fetchMyDecksFromApi() {
@@ -474,6 +487,63 @@ class FlashcardViewModel : ViewModel() {
     fun deleteDeck(deckId: String) {
         viewModelScope.launch {
             repository.deleteDeck(deckId)
+        }
+    }
+
+    /**
+     * Envia os dados da sessão para a API após salvar no Firebase
+     */
+    private fun sendSessionToAPI(sessionId: String, deckId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val user = FirebaseAuth.getInstance().currentUser
+            if (user == null) {
+                Log.e("SessionAPI", "Usuário não está logado.")
+                return@launch
+            }
+
+            try {
+                // Obtém o token de autenticação
+                val token = com.google.android.gms.tasks.Tasks.await(user.getIdToken(true)).token
+                if (token == null) {
+                    Log.e("SessionAPI", "Não foi possível obter o token de autenticação.")
+                    return@launch
+                }
+
+                // Configura a conexão HTTP
+                val url = URL("https://estudapp-api-293741035243.southamerica-east1.run.app/deck-sessions")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "POST"
+                connection.setRequestProperty("Authorization", "Bearer $token")
+                connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                connection.doOutput = true
+                connection.connectTimeout = 30000 // 30 segundos
+                connection.readTimeout = 60000 // 60 segundos
+
+                // Monta o payload JSON
+                val jsonPayload = JSONObject()
+                jsonPayload.put("sessionId", sessionId)
+                jsonPayload.put("deckId", deckId)
+
+                // Envia a requisição
+                val outputStreamWriter = OutputStreamWriter(connection.outputStream)
+                outputStreamWriter.write(jsonPayload.toString())
+                outputStreamWriter.flush()
+                outputStreamWriter.close()
+
+                // Verifica a resposta (opcional, já que não precisa tratar o retorno)
+                val responseCode = connection.responseCode
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    Log.d("SessionAPI", "Dados da sessão enviados com sucesso para a API")
+                } else {
+                    Log.w("SessionAPI", "API respondeu com código: $responseCode")
+                }
+
+                connection.disconnect()
+
+            } catch (e: Exception) {
+                // Log do erro, mas não interrompe o fluxo já que o retorno não precisa ser tratado
+                Log.e("SessionAPI", "Erro ao enviar dados da sessão para API: ${e.message}")
+            }
         }
     }
 }

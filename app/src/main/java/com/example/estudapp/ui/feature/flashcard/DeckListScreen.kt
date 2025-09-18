@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -30,9 +31,13 @@ import androidx.navigation.NavHostController
 import com.example.estudapp.R
 import com.example.estudapp.data.model.DeckDTO
 import com.example.estudapp.ui.theme.Black
+import com.example.estudapp.ui.theme.ErrorRed
 import com.example.estudapp.ui.theme.LightGray
 import com.example.estudapp.ui.theme.PrimaryBlue
 import com.example.estudapp.ui.theme.White
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,6 +124,25 @@ fun DeckListScreen(
                             Text("Você ainda não\ntem nenhum deck :\\", color = PrimaryBlue, fontSize = 10.sp, lineHeight = 12.sp, textAlign = TextAlign.Center)
                         }
                     } else {
+                        val upcomingReviews = state.decks
+                            .filter { it.proximaRevisaoTimestamp != null }
+                            .sortedBy { it.proximaRevisaoTimestamp }
+
+                        if (upcomingReviews.isNotEmpty()) {
+                            Spacer(Modifier.fillMaxHeight(0.05f))
+                            Text("Próximas Repetições", color = PrimaryBlue, fontSize = 17.sp, modifier = Modifier.align(Alignment.Start))
+                            Spacer(Modifier.height(5.dp))
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth().heightIn(max=200.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                items(upcomingReviews) { deck ->
+                                    DeckRepetitionItem(navController = navController, deck = deck)
+                                }
+                            }
+                        }
+
+
                         Spacer(Modifier.fillMaxHeight(0.1f))
 
                         Text("Meus decks", color = PrimaryBlue, fontSize = 17.sp, modifier = Modifier.align(Alignment.Start))
@@ -172,6 +196,47 @@ fun DeckItem(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(text = it, style = MaterialTheme.typography.bodySmall, color = Black)
             }
+        }
+    }
+}
+
+@Composable
+fun DeckRepetitionItem(
+    navController: NavHostController,
+    deck: DeckDTO
+) {
+    val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val date = deck.proximaRevisaoTimestamp?.let { Date(it) }
+    val isPast = date != null && date.before(Date())
+
+    Row (
+        modifier = Modifier
+            .clip(RoundedCornerShape(30f))
+            .background(LightGray)
+            .padding(13.dp)
+            .fillMaxWidth()
+            .height(40.dp)
+            .clickable(
+                onClick = { navController.navigate("flashcard_list/${deck.id}/${deck.name}/${deck.description}") }
+            ),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(painter = painterResource(id = R.drawable.icon_decks), contentDescription = null, Modifier
+            .size(40.dp)
+        )
+        Spacer(Modifier.width(15.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = deck.name, style = MaterialTheme.typography.titleMedium, color = Black)
+        }
+        date?.let {
+            Text(
+                text = dateFormatter.format(it),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isPast) ErrorRed else Black,
+                fontWeight = if (isPast) FontWeight.Bold else FontWeight.Normal
+            )
         }
     }
 }
