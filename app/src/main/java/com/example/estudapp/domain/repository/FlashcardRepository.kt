@@ -1,6 +1,7 @@
 package com.example.estudapp.domain.repository
 
 import android.net.Uri
+import android.util.Log
 import com.example.estudapp.data.model.DeckDTO
 import com.example.estudapp.data.model.FlashcardDTO
 import com.google.firebase.auth.FirebaseAuth
@@ -17,14 +18,19 @@ import com.example.estudapp.data.model.DeckPlayStatDTO
 import com.example.estudapp.data.model.FavoriteLocationDTO
 import com.example.estudapp.data.model.ReviewResultDTO
 import com.example.estudapp.data.model.SimpleChatMessageDTO
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlin.coroutines.resume
 
 
@@ -401,6 +407,53 @@ class FlashcardRepository {
         val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
         return R * c
     }
+
+    suspend fun calculateNextReview(deckId: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            val user = FirebaseAuth.getInstance().currentUser
+            if (user == null) {
+                return@withContext Result.failure(Exception("Usuário não está logado."))
+            }
+
+            val token = try {
+                Tasks.await(user.getIdToken(true)).token
+            } catch (e: Exception) {
+                return@withContext Result.failure(Exception("Não foi possível obter o token."))
+            }
+
+            if (token == null) {
+                return@withContext Result.failure(Exception("Token é nulo."))
+            }
+
+            val url =
+                URL("https://estudapp-api-293741035243.southamerica-east1.run.app/decks/$deckId/calculate-next-review")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Authorization", "Bearer $token")
+            connection.connectTimeout = 30000 // 30 segundos
+            connection.readTimeout = 60000 // 60 segundos
+
+            try {
+                val responseCode = connection.responseCode
+                Log.d("CalculateNextReview", "Response code: $responseCode para deckId: $deckId")
+
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    Result.success(Unit)
+                } else {
+                    val errorResponse = connection.errorStream?.bufferedReader()?.readText()
+                    Log.e("CalculateNextReview", "Erro na API: $responseCode - $errorResponse")
+                    Result.failure(Exception("Erro do servidor: $responseCode"))
+                }
+
+            } catch (e: Exception) {
+                Log.e("CalculateNextReview", "Erro na requisição: ${e.message}", e)
+                Result.failure(e)
+            } finally {
+                connection.disconnect()
+            }
+        }
+    }
+
 
     //Salvar nome em ''users'' no realtime database
     /* suspend fun saveUserName(userId: String, userName: String): Result<Unit> {
