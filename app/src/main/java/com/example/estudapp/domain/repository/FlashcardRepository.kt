@@ -121,6 +121,16 @@ class FlashcardRepository {
         }
     }
 
+    suspend fun deleteDeck(deckId: String): Result<Unit> {
+        return try {
+            val deckRef = flashcardsRef.child(deckId)
+            deckRef.removeValue().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     fun getDecks(): Flow<Result<List<DeckDTO>>> = callbackFlow {
         val userId = getCurrentUserId()
         if (userId == null) {

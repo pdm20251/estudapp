@@ -25,13 +25,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val authViewModel : AuthViewModel by viewModels()
         setContent {
-            Box(
-                modifier = Modifier
-                    .safeDrawingPadding()
-            ) {
-                EstudaTheme {
-                    EPPNavHost(authViewModel = authViewModel)
-                }
+            EstudaTheme {
+                EPPNavHost(authViewModel = authViewModel)
             }
         }
     }

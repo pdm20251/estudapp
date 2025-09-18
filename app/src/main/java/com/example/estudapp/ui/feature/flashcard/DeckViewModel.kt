@@ -17,6 +17,9 @@ class DeckViewModel : ViewModel() {
     private val _decksState = MutableStateFlow<DecksUiState>(DecksUiState.Loading)
     val decksState: StateFlow<DecksUiState> = _decksState.asStateFlow()
 
+    private val _currentDeck = MutableStateFlow<DeckDTO?>(null)
+    val currentDeck: StateFlow<DeckDTO?> = _currentDeck.asStateFlow()
+
     init {
         loadDecks()
     }
