@@ -4,6 +4,7 @@ import android.Manifest
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material3.*
@@ -12,7 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.estudapp.data.model.FavoriteLocationDTO
@@ -250,10 +253,16 @@ fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("A permissão de localização é essencial para esta funcionalidade.")
+        Text("A permissão de localização é essencial para esta funcionalidade.", textAlign = TextAlign.Center)
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onRequestPermission) {
-            Text("Conceder Permissão")
+        Button(
+            onClick = { onRequestPermission },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PrimaryBlue
+            ),
+            shape = RoundedCornerShape(30f)
+        ) {
+            Text(text = "Permitir")
         }
     }
 }
@@ -264,20 +273,33 @@ fun BackgroundPermissionDialog(onPermissionRequest: () -> Unit) {
 
     if (showDialog) {
         AlertDialog(
+            shape = RoundedCornerShape(30f),
             onDismissRequest = { showDialog = false },
             title = { Text("Permissão Adicional Necessária") },
             text = { Text("Para que o app possa te notificar sobre locais de estudo mesmo quando estiver fechado, por favor, selecione a opção 'Permitir o tempo todo' na próxima tela de permissão.") },
             confirmButton = {
-                Button(onClick = {
-                    onPermissionRequest()
-                    showDialog = false
-                }) {
-                    Text("Entendi, continuar")
+                Button(
+                    onClick = {
+                        onPermissionRequest()
+                        showDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryBlue
+                    ),
+                    shape = RoundedCornerShape(30f)
+                ) {
+                    Text(text = "Entendi, continuar")
                 }
             },
             dismissButton = {
-                Button(onClick = { showDialog = false }) {
-                    Text("Agora não")
+                Button(
+                    onClick = { showDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryBlue
+                    ),
+                    shape = RoundedCornerShape(30f)
+                ) {
+                    Text(text = "Agora não")
                 }
             }
         )

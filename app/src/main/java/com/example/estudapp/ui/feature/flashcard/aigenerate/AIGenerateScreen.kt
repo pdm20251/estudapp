@@ -18,6 +18,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.KeyboardArrowLeft
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,7 +35,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.estudapp.R
+import com.example.estudapp.ui.feature.auth.AuthState
 import com.example.estudapp.ui.feature.flashcard.FlashcardViewModel
 import com.example.estudapp.ui.theme.Black
 import com.example.estudapp.ui.theme.ErrorRed
@@ -58,14 +65,25 @@ import com.example.estudapp.ui.theme.PrimaryBlue
 @Composable
 fun AIGenerateScreen(
     navController: NavHostController,
-    flashcardViewModel: FlashcardViewModel = viewModel(),
+    aiGenerateViewModel: AIGenerateViewModel = viewModel(),
     deckId: String,
     flashcardId: String?
 ) {
+    val uiState = aiGenerateViewModel.uiState.collectAsState()
+
     var cardTypeIndex by remember { mutableIntStateOf(0) }
+
     val cardOptions = listOf("Frente / Verso", "Cloze", "Digite a resposta", "Múltipla escolha")
+    val cardTypes = listOf("FRENTE_VERSO", "CLOZE", "DIGITE_RESPOSTA", "MULTIPLA_ESCOLHA")
+
     var prompt by remember {
         mutableStateOf("")
+    }
+
+    LaunchedEffect(uiState.value) {
+        if (uiState.value is GenUiState.Completed) {
+            navController.popBackStack()
+        }
     }
 
     Scaffold (
@@ -97,31 +115,41 @@ fun AIGenerateScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text("Selecione o tipo de Flashcard:", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.align(Alignment.Start), color = PrimaryBlue)
-                (0..3).forEach { index ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = cardTypeIndex == index,
-                            onClick = { cardTypeIndex = index },
-                            colors = RadioButtonDefaults.colors(
-                                selectedColor = PrimaryBlue
+
+            if (uiState.value == GenUiState.Waiting){
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        "Selecione o tipo de Flashcard:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        modifier = Modifier.align(Alignment.Start),
+                        color = PrimaryBlue
+                    )
+                    (0..3).forEach { index ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = cardTypeIndex == index,
+                                onClick = { cardTypeIndex = index },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = PrimaryBlue
+                                )
                             )
-                        )
-                        Text(cardOptions[index])
+                            Text(cardOptions[index])
+                        }
                     }
                 }
-            }
+            Spacer(Modifier.height(30.dp))
 
             Text(
                 text = "Prompt", color = PrimaryBlue,
                 fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Start,
                 modifier = Modifier
                     .align(Alignment.Start)
@@ -130,11 +158,11 @@ fun AIGenerateScreen(
             Spacer(Modifier.height(7.dp))
             OutlinedTextField(
                 modifier = Modifier
-                    .fillMaxWidth(0.85f)
+                    .fillMaxWidth()
                     .height(55.dp),
                 value = prompt,
                 onValueChange = { prompt = it },
-                placeholder = { Text("Ex.: geografia geral") },
+                placeholder = { Text("Ex.: Faça uma pergunta sobre geografia") },
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = PrimaryBlue,
                     unfocusedIndicatorColor = PrimaryBlue,
@@ -145,6 +173,28 @@ fun AIGenerateScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 singleLine = true
             )
+
+            Spacer(Modifier.height(40.dp))
+
+            Button(
+                onClick = {
+                    val cardType = cardTypes[cardTypeIndex]
+                    aiGenerateViewModel.generateFlashcardFromAI(deckId, cardType, prompt)
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .height(55.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryBlue
+                ),
+                shape = RoundedCornerShape(30f),
+                enabled = (prompt.length > 8)
+            ) {
+                Text(text = "Gerar card", fontSize = 18.sp)
+            }
+        } else {
+                CircularProgressIndicator(color = PrimaryBlue)
+            }
         }
     }
 }
