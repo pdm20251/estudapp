@@ -115,6 +115,7 @@ fun AIGenerateScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+
             if (uiState.value == GenUiState.Waiting){
                 Column(
                     modifier = Modifier
