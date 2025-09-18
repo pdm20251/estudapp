@@ -27,7 +27,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +61,23 @@ fun HomeScreen(
 ) {
     val authState = authViewModel.authState.observeAsState()
 
+    var name by remember {
+        mutableStateOf("")
+    }
+
+    LaunchedEffect(authViewModel.user) {
+        if (authViewModel.user == null && authState.value !is AuthState.Unauthenticated) {
+            navController.navigate("login") {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+            }
+        } else if (authViewModel.user != null) {
+            val currentDisplayName = authViewModel.user?.displayName
+            name = currentDisplayName ?: "Erro ao carregar nome"
+        }
+    }
+
     LaunchedEffect(authState.value) {
         if (authState.value is AuthState.Unauthenticated) {
             navController.navigate("login") {
@@ -85,7 +106,7 @@ fun HomeScreen(
                     .height(100.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "Bem vinda(o),\n[nome]", fontWeight = FontWeight.Black, fontSize = 22.sp, color = White)
+                Text(text = "Bem vinda(o),\n$name", fontWeight = FontWeight.Black, fontSize = 22.sp, color = White, lineHeight = 28.sp)
 
                 Image(painter = painterResource(id = R.drawable.logo_white), contentDescription = null, Modifier
                         .size(30.dp)
