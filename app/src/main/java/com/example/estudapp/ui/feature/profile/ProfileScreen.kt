@@ -134,7 +134,8 @@ fun ProfileScreen(
                     errorIndicatorColor = ErrorRed
                 ),
                 shape = RoundedCornerShape(30f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true
             )
 
             Spacer(Modifier.height(40.dp))
