@@ -69,7 +69,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3) // Adicionado corretamente
-    
+
     // Google Maps, Location & Permissions
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.android.gms:play-services-maps:18.2.0")

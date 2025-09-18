@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +44,7 @@ import com.example.estudapp.ui.theme.LightGray
 import com.example.estudapp.ui.theme.PrimaryBlue
 import com.example.estudapp.ui.theme.White
 import java.util.Locale
+import kotlin.text.set
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,9 +54,22 @@ fun StudyScreen(
     deckId: String,
     deckName: String
 ) {
+    val scoreValues by studyViewModel.scoreValues.collectAsState()
+
+
     LaunchedEffect(deckId) {
         studyViewModel.startStudySession(deckId)
     }
+
+//    LaunchedEffect(studyViewModel.currentSessionTotalScore) {
+//        val totalReceivedScore = studyViewModel.currentSessionTotalScore
+//        totalScore = totalReceivedScore ?: 0.0
+//    }
+//
+//    LaunchedEffect(studyViewModel.currentSessionPossibleScore) {
+//        val possibleReceivedScore = studyViewModel.currentSessionPossibleScore
+//        possibleScore = possibleReceivedScore ?: 0.0
+//    }
 
     val uiState by studyViewModel.uiState.collectAsState()
 
@@ -111,6 +126,7 @@ fun StudyScreen(
                     }
                 }
                 is StudyUiState.SessionFinished -> {
+
                     Column(
                         modifier = Modifier
                             .border(
@@ -118,7 +134,7 @@ fun StudyScreen(
                                 color = LightGray,
                                 shape = RoundedCornerShape(30f)
                             )
-                            .padding(8.dp)
+                            .padding(16.dp)
                             .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
@@ -132,8 +148,8 @@ fun StudyScreen(
                         Text("Você finalizou todos os cards de $deckName,\ncontinue estudando!", textAlign = TextAlign.Center)
                         Spacer(Modifier.height(16.dp))
 
-                        Text("X/X", fontWeight = FontWeight.Bold)
-                        Text("respostas certas")
+                        Text("${scoreValues[0].toString()}/${scoreValues[1].toString()}", fontWeight = FontWeight.Bold)
+                        Text("pontos")
                     }
 
                     Row (
@@ -172,6 +188,8 @@ fun StudyScreen(
         }
     }
 }
+
+
 
 @Composable
 private fun StudyCard(
