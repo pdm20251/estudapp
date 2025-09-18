@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import java.util.UUID
 import com.example.estudapp.data.model.DeckPlayStatDTO
+import com.example.estudapp.data.model.FavoriteLocationDTO
 import com.example.estudapp.data.model.ReviewResultDTO
 import com.example.estudapp.data.model.SimpleChatMessageDTO
 import com.google.firebase.database.ServerValue
@@ -339,6 +340,66 @@ class FlashcardRepository {
         }
         userChatRef.addValueEventListener(listener)
         awaitClose { userChatRef.removeEventListener(listener) }
+    }
+
+    /*
+     * Stats
+     */
+    suspend fun getAllUserStats(): Result<List<DeckPlayStatDTO>> {
+        return try {
+            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
+            val snapshot = statsRef.child(userId).get().await()
+
+            val allStats = mutableListOf<DeckPlayStatDTO>()
+
+            snapshot.children.forEach { deckSnapshot ->
+                deckSnapshot.children.forEach { sessionSnapshot ->
+                    val stat = sessionSnapshot.getValue(DeckPlayStatDTO::class.java)
+                    stat?.let { allStats.add(it) }
+                }
+            }
+
+            Result.success(allStats)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getDeckInfo(deckId: String): Result<DeckDTO?> {
+        return try {
+            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
+            val snapshot = decksRef.child(userId).child(deckId).get().await()
+            val deck = snapshot.getValue(DeckDTO::class.java)
+            Result.success(deck)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUserFavoriteLocations(): Result<List<FavoriteLocationDTO>> {
+        return try {
+            val userId = getCurrentUserId() ?: return Result.failure(Exception("Usuário não autenticado."))
+            val snapshot = usersRef.child(userId).child("favoriteLocations").get().await()
+
+            val locations = snapshot.children.mapNotNull {
+                it.getValue(FavoriteLocationDTO::class.java)
+            }
+
+            Result.success(locations)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val R = 6371000.0 // Raio da Terra em metros
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return R * c
     }
 
     //Salvar nome em ''users'' no realtime database

@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material3.Button
@@ -43,6 +45,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.estudapp.R
 import com.example.estudapp.ui.feature.auth.AuthState
@@ -55,7 +58,8 @@ import com.example.estudapp.navigate.Routes
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    statsViewModel: StatsViewModel = viewModel()
 ) {
     var name by remember {
         mutableStateOf("")
@@ -103,14 +107,18 @@ fun ProfileScreen(
         Column (
             modifier = Modifier
                 .fillMaxSize()
-                .consumeWindowInsets(paddingValues),
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ){
+            Spacer(Modifier.height(20.dp))
+
             Image(painter = painterResource(id = R.drawable.icon_profile), contentDescription = null, Modifier
                 .size(120.dp))
 
-            Spacer(Modifier.height(120.dp))
+            Spacer(Modifier.height(40.dp))
 
             Text(
                 text = "Nome", color = PrimaryBlue,
@@ -118,12 +126,13 @@ fun ProfileScreen(
                 textAlign = TextAlign.Start,
                 modifier = Modifier
                     .align(Alignment.Start)
-                    .padding(start = 28.dp)
+                    .padding(start = 12.dp)
             )
             Spacer(Modifier.height(7.dp))
+
             OutlinedTextField(
                 modifier = Modifier
-                    .fillMaxWidth(0.85f)
+                    .fillMaxWidth()
                     .height(55.dp),
                 value = name,
                 onValueChange = { name = it },
@@ -135,11 +144,11 @@ fun ProfileScreen(
                     errorIndicatorColor = ErrorRed
                 ),
                 shape = RoundedCornerShape(30f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 singleLine = true
             )
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(20.dp))
 
             Button(
                 onClick = {
@@ -147,7 +156,7 @@ fun ProfileScreen(
                     navController.popBackStack()
                 },
                 modifier = Modifier
-                    .fillMaxWidth(0.85f)
+                    .fillMaxWidth()
                     .height(55.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = PrimaryBlue
@@ -159,11 +168,11 @@ fun ProfileScreen(
             }
 
             Spacer(Modifier.height(16.dp))
+
             Button(
-                // --- CORREÇÃO AQUI: Usando o texto da rota ---
                 onClick = { navController.navigate("map") },
                 modifier = Modifier
-                    .fillMaxWidth(0.85f)
+                    .fillMaxWidth()
                     .height(55.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = PrimaryBlue
@@ -175,11 +184,21 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(40.dp))
 
+            // ===== COMPONENTE DE ESTATÍSTICAS =====
+            StatsComponent(
+                modifier = Modifier.fillMaxWidth(),
+                statsViewModel = statsViewModel
+            )
+
+            Spacer(Modifier.height(40.dp))
+
             TextButton(
                 onClick = { authViewModel.signout() },
             ) {
                 Text("Sair", color = PrimaryBlue, fontSize = 15.sp)
             }
+
+            Spacer(Modifier.height(20.dp))
         }
     }
 }
