@@ -131,6 +131,7 @@ fun SignUpScreen(
                     errorIndicatorColor = ErrorRed
                 ),
                 shape = RoundedCornerShape(30f),
+                singleLine = true
             )
 
             Spacer(Modifier.height(30.dp))
@@ -158,7 +159,8 @@ fun SignUpScreen(
                     errorIndicatorColor = ErrorRed
                 ),
                 shape = RoundedCornerShape(30f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true
             )
 
             Spacer(Modifier.height(30.dp))
@@ -186,7 +188,8 @@ fun SignUpScreen(
                     errorIndicatorColor = ErrorRed
                 ),
                 shape = RoundedCornerShape(30f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                singleLine = true
             )
 
             Spacer(Modifier.height(70.dp))
