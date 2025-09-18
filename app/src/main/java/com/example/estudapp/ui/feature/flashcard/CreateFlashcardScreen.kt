@@ -1,10 +1,12 @@
 package com.example.estudapp.ui.feature.flashcard
 
+import android.content.res.Resources
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import com.example.estudapp.R
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -12,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,16 +31,25 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.estudapp.data.model.AlternativaDTO
 import com.example.estudapp.data.model.FlashcardDTO
 import com.example.estudapp.data.model.FlashcardTypeEnum
 import java.util.Locale
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,10 +92,12 @@ fun CreateFlashcardScreen(
                 flashcardViewModel.resetSaveStatus()
                 navController.popBackStack()
             }
+
             is SaveStatus.Error -> {
                 Toast.makeText(context, status.message, Toast.LENGTH_SHORT).show()
                 flashcardViewModel.resetSaveStatus()
             }
+
             else -> {}
         }
     }
@@ -121,7 +135,6 @@ fun CreateFlashcardScreen(
                     .fillMaxSize()
                     .padding(16.dp)
                     .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (isEditMode && cardToEdit == null) {
                     CircularProgressIndicator()
@@ -130,12 +143,15 @@ fun CreateFlashcardScreen(
                         FlashcardTypeEnum.FRENTE_VERSO -> FormFrenteVerso(
                             deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
                         )
+
                         FlashcardTypeEnum.CLOZE -> FormCloze(
                             deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
                         )
+
                         FlashcardTypeEnum.DIGITE_RESPOSTA -> FormDigiteResposta(
                             deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
                         )
+
                         FlashcardTypeEnum.MULTIPLA_ESCOLHA -> FormMultiplaEscolha(
                             deckId, flashcardViewModel, saveStatus, isEditMode, cardToEdit
                         )
@@ -162,34 +178,57 @@ private fun FormFrenteVerso(
     // Se quiser usar mídia na criação, mantém aqui:
     var imagemUri by remember { mutableStateOf<Uri?>(null) }
     var audioUri by remember { mutableStateOf<Uri?>(null) }
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? -> imagemUri = uri }
-    val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? -> audioUri = uri }
+    val imagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            imagemUri = uri
+        }
+    val audioPicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            audioUri = uri
+        }
 
     LaunchedEffect(cardToEdit) {
         if (isEditMode && cardToEdit != null) {
             frente = cardToEdit.frente.orElseEmpty()
-            verso  = cardToEdit.verso.orElseEmpty()
+            verso = cardToEdit.verso.orElseEmpty()
         }
     }
 
+    Text(
+        text = "Frente (Pergunta)",
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        modifier = Modifier.padding(vertical = 8.dp),
+        textAlign = TextAlign.Left
+    )
     OutlinedTextField(
         value = frente,
         onValueChange = { frente = it },
-        label = { Text("Frente (Pergunta)") },
-        modifier = Modifier.fillMaxWidth()
+        label = { Text("Pergunta") },
+        modifier = Modifier.fillMaxWidth().height(160.dp),
+        shape = RoundedCornerShape(16.dp)
+    )
+    Spacer(Modifier.height(16.dp))
+    Text(
+        text = "Verso (Resposta)",
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        modifier = Modifier.padding(vertical = 8.dp),
+        textAlign = TextAlign.Left
     )
     OutlinedTextField(
         value = verso,
         onValueChange = { verso = it },
-        label = { Text("Verso (Resposta)") },
-        modifier = Modifier.fillMaxWidth()
+        label = { Text("Resposta") },
+        modifier = Modifier.fillMaxWidth().height(160.dp),
+        shape = RoundedCornerShape(16.dp)
     )
 
-    Spacer(Modifier.height(32.dp))
+    Spacer(Modifier.height(64.dp))
 
     SaveButton(
         isEditMode = isEditMode,
-        enabled = frente.isNotBlank() && verso.isNotBlank() && saveStatus !is SaveStatus.Loading,
+        enabled =  saveStatus !is SaveStatus.Loading,
         isLoading = saveStatus is SaveStatus.Loading
     ) {
         if (isEditMode && cardToEdit != null) {
@@ -198,6 +237,11 @@ private fun FormFrenteVerso(
             viewModel.saveFrenteVerso(deckId, frente, verso, imagemUri, audioUri)
         }
     }
+    Spacer(Modifier.height(16.dp))
+    GenerateCardButton(
+        /* Inserir aqui lógica para gerar card com LLM. */
+    )
+
 }
 
 @Composable
@@ -255,8 +299,14 @@ private fun FormDigiteResposta(
 
     var imagemUri by remember { mutableStateOf<Uri?>(null) }
     var audioUri by remember { mutableStateOf<Uri?>(null) }
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? -> imagemUri = uri }
-    val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? -> audioUri = uri }
+    val imagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            imagemUri = uri
+        }
+    val audioPicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            audioUri = uri
+        }
 
     LaunchedEffect(cardToEdit) {
         if (isEditMode && cardToEdit != null) {
@@ -348,8 +398,14 @@ private fun FormMultiplaEscolha(
     var alt4Uri by remember { mutableStateOf<Uri?>(null) }
     var respostaCorretaIndex by remember { mutableIntStateOf(0) }
 
-    val perguntaImagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? -> perguntaImagemUri = uri }
-    val perguntaAudioPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? -> perguntaAudioUri = uri }
+    val perguntaImagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            perguntaImagemUri = uri
+        }
+    val perguntaAudioPicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            perguntaAudioUri = uri
+        }
 
     // Preenche campos no modo edição
     LaunchedEffect(cardToEdit) {
@@ -391,7 +447,10 @@ private fun FormMultiplaEscolha(
         onUriChange: (Uri?) -> Unit,
         label: String
     ) {
-        val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { newUri: Uri? -> onUriChange(newUri) }
+        val launcher =
+            rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { newUri: Uri? ->
+                onUriChange(newUri)
+            }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = texto,
@@ -444,10 +503,22 @@ private fun FormMultiplaEscolha(
             // Mantém as imageUrl atuais das alternativas (se existirem)
             val altsExistentes = cardToEdit.alternativas ?: emptyList()
             val alternativasAtualizadas = listOf(
-                AlternativaDTO(text = alt1Texto.ifBlank { null }, imageUrl = altsExistentes.getOrNull(0)?.imageUrl),
-                AlternativaDTO(text = alt2Texto.ifBlank { null }, imageUrl = altsExistentes.getOrNull(1)?.imageUrl),
-                AlternativaDTO(text = alt3Texto.ifBlank { null }, imageUrl = altsExistentes.getOrNull(2)?.imageUrl),
-                AlternativaDTO(text = alt4Texto.ifBlank { null }, imageUrl = altsExistentes.getOrNull(3)?.imageUrl)
+                AlternativaDTO(
+                    text = alt1Texto.ifBlank { null },
+                    imageUrl = altsExistentes.getOrNull(0)?.imageUrl
+                ),
+                AlternativaDTO(
+                    text = alt2Texto.ifBlank { null },
+                    imageUrl = altsExistentes.getOrNull(1)?.imageUrl
+                ),
+                AlternativaDTO(
+                    text = alt3Texto.ifBlank { null },
+                    imageUrl = altsExistentes.getOrNull(2)?.imageUrl
+                ),
+                AlternativaDTO(
+                    text = alt4Texto.ifBlank { null },
+                    imageUrl = altsExistentes.getOrNull(3)?.imageUrl
+                )
             )
 
             viewModel.updateMultiplaEscolha(
@@ -523,9 +594,14 @@ private fun SaveButton(
     Button(
         onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth(0.8f)
-            .height(55.dp),
-        enabled = enabled
+            .fillMaxWidth()
+            .height(60.dp),
+        enabled = enabled,
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(
+            disabledContainerColor = MaterialTheme.colorScheme.secondary,
+            containerColor = MaterialTheme.colorScheme.secondary
+        ),
     ) {
         if (isLoading) {
             CircularProgressIndicator(
@@ -533,10 +609,52 @@ private fun SaveButton(
                 color = MaterialTheme.colorScheme.onPrimary
             )
         } else {
-            Text(if (isEditMode) "Atualizar" else "Salvar")
+            Text(
+                if (isEditMode) "Atualizar" else "Salvar",
+                style = TextStyle(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+            )
         }
     }
 }
 
+
+@Composable
+private fun GenerateCardButton(){
+    Button(
+        onClick = { },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(60.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+
+        ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Gerar card com MonitorIA",
+                style = TextStyle(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+            )
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                painter = painterResource(id = R.drawable.icon_generate),
+                contentDescription = "Gerar pergunta com IA"
+            )
+        }
+    }
+}
+
+
 /* Extensãozinha para evitar null/blank repetido */
 private fun String?.orElseEmpty(): String = this ?: ""
+
+

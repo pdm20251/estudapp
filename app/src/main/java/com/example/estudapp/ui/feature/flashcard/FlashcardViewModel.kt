@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class FlashcardViewModel : ViewModel() {
+open class FlashcardViewModel : ViewModel() {
 
     private val repository = FlashcardRepository()
 
@@ -73,6 +73,10 @@ class FlashcardViewModel : ViewModel() {
     fun saveFrenteVerso(deckId: String, frente: String, verso: String, imagemUri: Uri?, audioUri: Uri?) {
         viewModelScope.launch {
             _saveStatus.value = SaveStatus.Loading
+            if (frente.isBlank() || verso.isBlank()) {
+                _saveStatus.value = SaveStatus.Error("Os campos 'Frente' e 'Verso' não podem estar vazios.")
+                return@launch // Sai da função
+            }
             val imageUrl = if (imagemUri != null) repository.uploadFile(imagemUri).getOrNull() else null
             val audioUrl = if (audioUri != null) repository.uploadFile(audioUri).getOrNull() else null
             val dto = FlashcardDTO(type = FlashcardTypeEnum.FRENTE_VERSO.name, frente = frente, verso = verso, perguntaImageUrl = imageUrl, perguntaAudioUrl = audioUrl)

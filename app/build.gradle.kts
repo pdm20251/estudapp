@@ -60,7 +60,9 @@ dependencies {
     // A BoM (Bill of Materials) gerencia as versões de todas as bibliotecas Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.1"))
     implementation(libs.firebase.auth)
-    implementation("com.google.firebase:firebase-database-ktx") // Adicionado corretamente
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.ui.graphics) // Adicionado corretamente
 
     // Dependências de Teste
     testImplementation(libs.junit)
