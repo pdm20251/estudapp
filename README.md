@@ -220,5 +220,5 @@ Este projeto está licenciado sob a GNU General Public License v3.0 - veja o arq
 
 Projeto desenvolvido para a disciplina de **Programação para Dispositivos Móveis** da **Universidade Federal de Uberlândia**, orientado pelo professor **Alexsandro Santos Soares**.
 
-**Valor**: 25 pontos  
+**Valor**: 35 pontos  
 **Data de Apresentação**: 18/09/2025
